@@ -3,5 +3,5 @@
         Sanity Check
     </x-slot:title>
 
-    <livewire:sanity-check />
+    <livewire:network-view />
 </x-layouts.app>
