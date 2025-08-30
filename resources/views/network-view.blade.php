@@ -1,7 +1,7 @@
 <x-layouts.app>
     <x-slot:title>
-        Sanity Check
+        Network View
     </x-slot:title>
 
-    <livewire:sanity-check />
+    <livewire:network-view />
 </x-layouts.app>

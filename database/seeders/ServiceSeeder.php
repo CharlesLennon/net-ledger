@@ -16,5 +16,19 @@ class ServiceSeeder extends Seeder
     {
         Service::create(['name' => 'SSH']);
         Service::create(['name' => 'HTTP']);
+        Service::create(['name' => 'HTTPS']);
+        Service::create(['name' => 'MySQL']);
+        Service::create(['name' => 'Redis']);
+        Service::create(['name' => 'Telnet']);
+        Service::create(['name' => 'SMTP']);
+        Service::create(['name' => 'DNS']);
+        Service::create(['name' => 'DHCP']);
+        Service::create(['name' => 'SNMP']);
+        Service::create(['name' => 'FTP']);
+        Service::create(['name' => 'Nginx']);
+        Service::create(['name' => 'Apache']);
+        Service::create(['name' => 'PostgreSQL']);
+        Service::create(['name' => 'MongoDB']);
+        Service::create(['name' => 'Elasticsearch']);
     }
 }

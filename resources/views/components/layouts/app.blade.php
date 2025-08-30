@@ -7,14 +7,19 @@
         <title>{{ $title ?? 'Page Title' }}</title>
 
         <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+        
+        <!-- LiteGraph.js -->
+        <script src="https://unpkg.com/litegraph.js@0.7.16/build/litegraph.js"></script>
+        <link rel="stylesheet" type="text/css" href="https://unpkg.com/litegraph.js@0.7.16/css/litegraph.css">
  
         @vite(['resources/css/app.css', 'resources/js/app.js'])
 
         @livewireStyles
     </head>
-    <body>
+    <body class="bg-gray-900 text-white">
         {{ $slot }}
 
+        @stack('scripts') // Add this line
         @livewireScripts
     </body>
 </html>

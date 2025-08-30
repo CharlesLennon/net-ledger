@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
             LocationSeeder::class,
             DeviceTemplateSeeder::class,
             DeviceSeeder::class,
+            PcieSlotSeeder::class,
             PcieCardSeeder::class,
             InterfaceSeeder::class,
             ServiceSeeder::class,
