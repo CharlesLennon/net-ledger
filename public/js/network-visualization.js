@@ -51,6 +51,17 @@
         WIRE_OFFSET_INCREMENT: 10,
     };
 
+    const PARTICLE_CONFIG = {
+        SPEED: 1.5,                    // Animation speed of particles
+        SIZE: 4,                       // Size of particle balls in pixels
+        SPACING: 80,                   // Distance between particles on each wire
+        COLOR: "#ffffff",              // Color of particles and trails
+        TRAIL_LENGTH: 8,               // Number of trail points behind each particle
+        SHOW_ONLY_ON_SELECTED: true,   // true = particles only on selected nodes, false = particles on all wires
+    };
+
+    let activeParticles = new Map();
+
     class DeviceNode extends window.LGraphNode {
         constructor() {
             super();
@@ -154,6 +165,7 @@
         createNetworkVisualization(graph);
         graph.start();
         initializeCustomRendering(canvas);
+        startParticleAnimation();
         
         setTimeout(() => {
             canvas.setDirty(true, true);
@@ -535,13 +547,18 @@
         ctx.save();
 
         const connectionColor = link.color || color || "#10b981";
+        const routingPoints = calculateOrthogonalPath(a, b, start_dir, end_dir, link.wireIndex || 0, link);
+
+        const isSelected = isLinkSelected(link);
+        if (isSelected) {
+            drawGlowingWire(ctx, routingPoints, connectionColor);
+        }
+
         ctx.strokeStyle = connectionColor;
         ctx.lineWidth = 3;
         ctx.setLineDash([8, 4]);
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
-
-        const routingPoints = calculateOrthogonalPath(a, b, start_dir, end_dir, link.wireIndex || 0, link);
 
         drawRoundedPath(ctx, routingPoints);
 
@@ -549,9 +566,189 @@
             drawConnectionArrow(ctx, routingPoints[routingPoints.length - 2], routingPoints[routingPoints.length - 1], connectionColor);
         }
 
+        if (isSelected || !PARTICLE_CONFIG.SHOW_ONLY_ON_SELECTED) {
+            createParticlesForLink(link, routingPoints);
+            drawParticles(ctx, routingPoints, link);
+        }
+
         ctx.restore();
 
         return true;
+    }
+
+    function isLinkSelected(link) {
+        if (!link || !window.canvasInstance) return false;
+
+        const canvas = window.canvasInstance;
+
+        if (!link.origin_id || !link.target_id) return false;
+
+        const originNode = canvas.graph.getNodeById(link.origin_id);
+        const targetNode = canvas.graph.getNodeById(link.target_id);
+
+        if (!originNode || !targetNode) return false;
+
+        return originNode.is_selected || targetNode.is_selected;
+    }
+
+    function createParticlesForLink(link, routingPoints) {
+        if (!link || !routingPoints || routingPoints.length < 2) return;
+
+        const linkId = `${link.origin_id}-${link.target_id}`;
+        if (!activeParticles.has(linkId)) {
+            activeParticles.set(linkId, []);
+        }
+
+        const particles = activeParticles.get(linkId);
+        const pathLength = calculatePathLength(routingPoints);
+
+        if (particles.length === 0 || pathLength / particles.length > PARTICLE_CONFIG.SPACING) {
+            particles.push({
+                position: 0,
+                speed: PARTICLE_CONFIG.SPEED,
+                pathLength: pathLength,
+                routingPoints: routingPoints,
+                trail: []
+            });
+        }
+    }
+
+    function updateParticles(deltaTime) {
+        activeParticles.forEach((particles, linkId) => {
+            particles.forEach((particle, index) => {
+                particle.position += particle.speed;
+
+                if (particle.position >= particle.pathLength) {
+                    particle.position = 0;
+                    particle.trail = [];
+                }
+
+                const currentPos = getPositionAlongPath(particle.routingPoints, particle.position / particle.pathLength);
+                particle.trail.push(currentPos);
+
+                if (particle.trail.length > PARTICLE_CONFIG.TRAIL_LENGTH) {
+                    particle.trail.shift();
+                }
+            });
+        });
+    }
+
+    function calculatePathLength(points) {
+        let length = 0;
+        for (let i = 1; i < points.length; i++) {
+            const dx = points[i].x - points[i - 1].x;
+            const dy = points[i].y - points[i - 1].y;
+            length += Math.sqrt(dx * dx + dy * dy);
+        }
+        return length;
+    }
+
+    function getPositionAlongPath(points, t) {
+        const targetLength = t * calculatePathLength(points);
+        let currentLength = 0;
+
+        for (let i = 1; i < points.length; i++) {
+            const dx = points[i].x - points[i - 1].x;
+            const dy = points[i].y - points[i - 1].y;
+            const segmentLength = Math.sqrt(dx * dx + dy * dy);
+
+            if (currentLength + segmentLength >= targetLength) {
+                const segmentT = (targetLength - currentLength) / segmentLength;
+                return {
+                    x: points[i - 1].x + dx * segmentT,
+                    y: points[i - 1].y + dy * segmentT
+                };
+            }
+
+            currentLength += segmentLength;
+        }
+
+        return points[points.length - 1];
+    }
+
+    function drawParticles(ctx, routingPoints, link) {
+        if (!routingPoints || routingPoints.length < 2) return;
+
+        const linkId = `${link.origin_id}-${link.target_id}`;
+        const particles = activeParticles.get(linkId);
+
+        if (!particles) return;
+
+        particles.forEach(particle => {
+            if (particle.trail.length > 1) {
+                ctx.save();
+
+                ctx.strokeStyle = PARTICLE_CONFIG.COLOR;
+                ctx.lineWidth = 2;
+                ctx.lineCap = 'round';
+                ctx.globalAlpha = 0.8;
+
+                ctx.beginPath();
+                ctx.moveTo(particle.trail[0].x, particle.trail[0].y);
+
+                for (let i = 1; i < particle.trail.length; i++) {
+                    const alpha = i / particle.trail.length;
+                    ctx.globalAlpha = alpha * 0.6;
+                    ctx.lineTo(particle.trail[i].x, particle.trail[i].y);
+                }
+
+                ctx.stroke();
+
+                const currentPos = particle.trail[particle.trail.length - 1];
+                ctx.globalAlpha = 1;
+                ctx.fillStyle = PARTICLE_CONFIG.COLOR;
+                ctx.beginPath();
+                ctx.arc(currentPos.x, currentPos.y, PARTICLE_CONFIG.SIZE, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+            }
+        });
+    }
+
+    function cleanupUnselectedParticles() {
+        const selectedLinkIds = new Set();
+
+        if (window.canvasInstance && window.canvasInstance.graph) {
+            const canvas = window.canvasInstance;
+            const allLinks = [];
+
+            canvas.graph._nodes.forEach(node => {
+                if (node.outputs) {
+                    node.outputs.forEach(output => {
+                        if (output.links) {
+                            output.links.forEach(linkId => {
+                                const link = canvas.graph.links[linkId];
+                                if (link && isLinkSelected(link)) {
+                                    selectedLinkIds.add(`${link.origin_id}-${link.target_id}`);
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+        }
+
+        for (const [linkId, particles] of activeParticles) {
+            if (!selectedLinkIds.has(linkId)) {
+                activeParticles.delete(linkId);
+            }
+        }
+    }
+
+    function drawGlowingWire(ctx, points, color) {
+        ctx.save();
+
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 8;
+        ctx.globalAlpha = 0.4;
+        ctx.setLineDash([]);
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        drawRoundedPath(ctx, points);
+
+        ctx.restore();
     }
 
     function drawRoundedPath(ctx, points) {
@@ -998,6 +1195,30 @@
 
             originalRenderLink.call(this, ctx, a, b, link, skip_border, flow, color, start_dir, end_dir, num_sublines);
         };
+    }
+
+    function startParticleAnimation() {
+        let lastTime = 0;
+
+        function animate(currentTime) {
+            const deltaTime = currentTime - lastTime;
+            lastTime = currentTime;
+
+            if (deltaTime < 50) {
+                updateParticles(deltaTime / 16.67);
+                if (PARTICLE_CONFIG.SHOW_ONLY_ON_SELECTED) {
+                    cleanupUnselectedParticles();
+                }
+            }
+
+            if (window.canvasInstance) {
+                window.canvasInstance.setDirty(true, true);
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        requestAnimationFrame(animate);
     }
 
 })();
