@@ -2,12 +2,9 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
-
-use App\Models\DeviceInterface;
 use App\Models\Device;
-use App\Models\PcieCard;
+use App\Models\DeviceInterface;
+use Illuminate\Database\Seeder;
 
 class InterfaceSeeder extends Seeder
 {
@@ -19,26 +16,29 @@ class InterfaceSeeder extends Seeder
         $devices = Device::all();
 
         foreach ($devices as $device) {
-            // All devices get power input
-            DeviceInterface::create([
-                'interface_type' => 'Power',
-                'label' => 'power-in',
-                'device_serial_number' => $device->serial_number,
-            ]);
-
             // Device-specific interfaces based on model type
-            if (str_contains($device->model_name, 'Catalyst')) {
-                // Cisco Catalyst switch - 24 port switch
-                for ($i = 1; $i <= 24; $i++) {
+            if (str_contains($device->model_name, 'Catalyst-2960-8')) {
+                // Cisco Catalyst switch - 8 port switch + power input
+                DeviceInterface::create([
+                    'interface_type' => 'Power',
+                    'label' => 'power-in',
+                    'device_serial_number' => $device->serial_number,
+                ]);
+                for ($i = 1; $i <= 8; $i++) {
                     DeviceInterface::create([
                         'interface_type' => 'RJ45',
                         'label' => "eth{$i}",
                         'device_serial_number' => $device->serial_number,
                     ]);
                 }
-            } elseif (str_contains($device->model_name, 'Netgear') || str_contains($device->model_name, 'GS724T')) {
-                // Netgear switch - 24 port managed switch
-                for ($i = 1; $i <= 24; $i++) {
+            } elseif (str_contains($device->model_name, 'GS708T-300')) {
+                // Netgear switch - 8 port managed switch + power input
+                DeviceInterface::create([
+                    'interface_type' => 'Power',
+                    'label' => 'power-in',
+                    'device_serial_number' => $device->serial_number,
+                ]);
+                for ($i = 1; $i <= 8; $i++) {
                     DeviceInterface::create([
                         'interface_type' => 'RJ45',
                         'label' => "eth{$i}",
@@ -46,7 +46,12 @@ class InterfaceSeeder extends Seeder
                     ]);
                 }
             } elseif (str_contains($device->model_name, 'pfSense') || str_contains($device->model_name, 'Firewall')) {
-                // Firewall - WAN/LAN interfaces
+                // Firewall - WAN/LAN interfaces + power input
+                DeviceInterface::create([
+                    'interface_type' => 'Power',
+                    'label' => 'power-in',
+                    'device_serial_number' => $device->serial_number,
+                ]);
                 DeviceInterface::create([
                     'interface_type' => 'RJ45',
                     'label' => 'wan0',
@@ -62,8 +67,35 @@ class InterfaceSeeder extends Seeder
                     'label' => 'dmz0',
                     'device_serial_number' => $device->serial_number,
                 ]);
+            } elseif (str_contains($device->model_name, 'APC') || str_contains($device->model_name, 'PDU')) {
+                // PDU - Power Distribution Unit with multiple power outputs + power input
+                for ($i = 1; $i <= 8; $i++) {
+                    DeviceInterface::create([
+                        'interface_type' => 'Power',
+                        'label' => "outlet-{$i}",
+                        'device_serial_number' => $device->serial_number,
+                    ]);
+                }
+                // PDU also has a power input
+                DeviceInterface::create([
+                    'interface_type' => 'Power',
+                    'label' => 'power-in',
+                    'device_serial_number' => $device->serial_number,
+                ]);
+            } elseif (str_contains($device->model_name, 'Main-Power-Source')) {
+                // Main Power Source - provides power to PDU (no power input needed)
+                DeviceInterface::create([
+                    'interface_type' => 'Power',
+                    'label' => 'main-power-out',
+                    'device_serial_number' => $device->serial_number,
+                ]);
             } else {
-                // Server/Generic device - standard interfaces
+                // Server/Generic device - standard interfaces + power input
+                DeviceInterface::create([
+                    'interface_type' => 'Power',
+                    'label' => 'power-in',
+                    'device_serial_number' => $device->serial_number,
+                ]);
                 DeviceInterface::create([
                     'interface_type' => 'RJ45',
                     'label' => 'eth0',
