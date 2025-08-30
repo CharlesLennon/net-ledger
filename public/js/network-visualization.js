@@ -38,6 +38,19 @@
         PAN_ACCELERATION: 1.5,
         ZOOM_SPEED: 0.1,
     };
+
+    const WIRE_ROUTING_CONFIG = {
+        HORIZONTAL_OFFSET_RIGHT: 520,
+        HORIZONTAL_OFFSET_LEFT: 350,
+        VERTICAL_OFFSET: 80,
+        MIN_DISTRIBUTED_DISTANCE: 300,
+        MIN_VERTICAL_DISTANCE: 50,
+        WIRE_SPACING: 25,
+        CORNER_RADIUS: 15,
+        MAX_WIRES_PER_CHANNEL: 3,
+        WIRE_OFFSET_INCREMENT: 10,
+    };
+
     class DeviceNode extends window.LGraphNode {
         constructor() {
             super();
@@ -92,7 +105,6 @@
         }
     }
 
-    // Set static title colors for DeviceNode
     DeviceNode.title_color = NODE_TITLE_BG_COLOR;
     DeviceNode.title_text_color = NODE_TITLE_TEXT_COLOR;
 
@@ -119,11 +131,9 @@
         }
     }
 
-    // Set static title colors for ServiceNode
     ServiceNode.title_color = NODE_TITLE_BG_COLOR;
     ServiceNode.title_text_color = NODE_TITLE_TEXT_COLOR;
 
-    // --- INITIALIZATION ---
     function initialize() {
         if (typeof window.LiteGraph === 'undefined') {
             showError('LiteGraph library not loaded. Please check your setup.');
@@ -143,6 +153,7 @@
 
         createNetworkVisualization(graph);
         graph.start();
+        initializeCustomRendering(canvas);
         
         setTimeout(() => {
             canvas.setDirty(true, true);
@@ -164,7 +175,6 @@
         const canvasElement = document.getElementById('mycanvas');
 
         if (!canvasElement) {
-            console.error('Canvas element not found!');
             return;
         }
 
@@ -273,7 +283,6 @@
         };
     }
 
-    // --- CORE LOGIC ---
     function createNetworkVisualization(graph) {
         const { locations, devices, interfaces, connections, deviceIPs } = getJsonData();
         if (!locations.length && !devices.length) {
@@ -302,7 +311,7 @@
 
     function processLocation(graph, location, startX, startY, parentGroup, nodeMap, serviceNodes) {
         let currentX = startX;
-        let currentY = startY + 20; // Additional offset for nodes within groups
+        let currentY = startY + 20;
         let maxWidth = 0;
         let totalHeight = 0;
 
@@ -359,6 +368,8 @@
     }
 
     function createPhysicalConnections(graph, connections, interfaces, nodeMap) {
+        const wireIndices = new Map();
+
         connections.forEach((connection, index) => {
             const sourceInterface = interfaces.find(i => i.interface_id === connection.source_interface_id);
             const destInterface = interfaces.find(i => i.interface_id === connection.destination_interface_id);
@@ -368,6 +379,16 @@
             const sourceDevice = nodeMap.get(sourceInterface.device_serial_number);
             const destDevice = nodeMap.get(destInterface.device_serial_number);
             if (!sourceDevice || !destDevice) return;
+
+            const nodePairKey = `${sourceInterface.device_serial_number}-${destInterface.device_serial_number}`;
+            const reverseKey = `${destInterface.device_serial_number}-${sourceInterface.device_serial_number}`;
+
+            if (!wireIndices.has(nodePairKey) && !wireIndices.has(reverseKey)) {
+                wireIndices.set(nodePairKey, 0);
+            }
+
+            const currentIndex = wireIndices.get(nodePairKey) || wireIndices.get(reverseKey) || 0;
+            wireIndices.set(nodePairKey, currentIndex + 1);
 
             const sourceSlot = sourceDevice.outputs.findIndex(o => {
                 const outputName = o.name || '';
@@ -400,6 +421,17 @@
                     if (link) {
                         const cableColor = getCableColor(connection.cable_type);
                         link.color = cableColor || CONNECTION_COLORS.POWER;
+
+                        if (typeof LiteGraph !== 'undefined') {
+                            link.start_dir = LiteGraph.LEFT;
+                            link.end_dir = LiteGraph.LEFT;
+                        } else {
+                            link.start_dir = 3;
+                            link.end_dir = 3;
+                        }
+                        link.isPowerConnection = true;
+                        link.route_along_groups = true;
+                        link.wireIndex = currentIndex;
                     }
                     return;
                 }
@@ -430,6 +462,28 @@
             if (link) {
                 const cableColor = getCableColor(connection.cable_type);
                 link.color = cableColor || (sourceInterface.interface_type === 'Power' ? CONNECTION_COLORS.POWER : CONNECTION_COLORS.INTERFACE_PHYSICAL);
+
+                if (typeof LiteGraph !== 'undefined') {
+                    if (sourceInterface.interface_type === 'Power') {
+                        link.start_dir = LiteGraph.LEFT;
+                        link.end_dir = LiteGraph.LEFT;
+                        link.isPowerConnection = true;
+                    } else {
+                        link.start_dir = LiteGraph.RIGHT;
+                        link.end_dir = LiteGraph.LEFT;
+                    }
+                } else {
+                    if (sourceInterface.interface_type === 'Power') {
+                        link.start_dir = 3;
+                        link.end_dir = 3;
+                        link.isPowerConnection = true;
+                    } else {
+                        link.start_dir = 4;
+                        link.end_dir = 3;
+                    }
+                }
+                link.route_along_groups = true;
+                link.wireIndex = currentIndex;
             }
         });
     }
@@ -473,7 +527,330 @@
         });
     }
 
-    // --- HELPERS ---
+    function renderRoutedConnection(ctx, a, b, link, skip_border, flow, color, start_dir, end_dir, num_sublines) {
+        if (!link || !link.route_along_groups) {
+            return false;
+        }
+
+        ctx.save();
+
+        const connectionColor = link.color || color || "#10b981";
+        ctx.strokeStyle = connectionColor;
+        ctx.lineWidth = 3;
+        ctx.setLineDash([8, 4]);
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        const routingPoints = calculateOrthogonalPath(a, b, start_dir, end_dir, link.wireIndex || 0, link);
+
+        drawRoundedPath(ctx, routingPoints);
+
+        if (flow) {
+            drawConnectionArrow(ctx, routingPoints[routingPoints.length - 2], routingPoints[routingPoints.length - 1], connectionColor);
+        }
+
+        ctx.restore();
+
+        return true;
+    }
+
+    function drawRoundedPath(ctx, points) {
+        if (points.length < 2) return;
+
+        const cornerRadius = WIRE_ROUTING_CONFIG.CORNER_RADIUS;
+
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, points[0].y);
+
+        for (let i = 1; i < points.length - 1; i++) {
+            const prev = points[i - 1];
+            const curr = points[i];
+            const next = points[i + 1];
+
+            const dx1 = curr.x - prev.x;
+            const dy1 = curr.y - prev.y;
+            const dx2 = next.x - curr.x;
+            const dy2 = next.y - curr.y;
+
+            const len1 = Math.sqrt(dx1 * dx1 + dy1 * dy1);
+            const len2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
+
+            if (len1 < cornerRadius * 2 || len2 < cornerRadius * 2) {
+                ctx.lineTo(curr.x, curr.y);
+                continue;
+            }
+
+            const ux1 = dx1 / len1;
+            const uy1 = dy1 / len1;
+            const ux2 = dx2 / len2;
+            const uy2 = dy2 / len2;
+
+            const cornerX = curr.x - ux1 * cornerRadius;
+            const cornerY = curr.y - uy1 * cornerRadius;
+            const nextX = curr.x + ux2 * cornerRadius;
+            const nextY = curr.y + uy2 * cornerRadius;
+
+            ctx.lineTo(cornerX, cornerY);
+
+            const cpX = curr.x;
+            const cpY = curr.y;
+            ctx.quadraticCurveTo(cpX, cpY, nextX, nextY);
+        }
+
+        ctx.lineTo(points[points.length - 1].x, points[points.length - 1].y);
+        ctx.stroke();
+    }
+
+    function calculateOrthogonalPath(startPos, endPos, startDir, endDir, wireIndex = 0, link = null) {
+        const points = [];
+        const startX = startPos[0];
+        const startY = startPos[1];
+        const endX = endPos[0];
+        const endY = endPos[1];
+
+        points.push({ x: startX, y: startY });
+
+        const deltaX = endX - startX;
+        const deltaY = endY - startY;
+
+        const wireOffset = (wireIndex % WIRE_ROUTING_CONFIG.MAX_WIRES_PER_CHANNEL) * WIRE_ROUTING_CONFIG.WIRE_OFFSET_INCREMENT;
+        const wireDirection = wireIndex % 2 === 0 ? 1 : -1;
+        const totalOffset = wireOffset * wireDirection;
+
+        const isPowerConnection = link && link.isPowerConnection;
+
+        if (Math.abs(deltaX) > WIRE_ROUTING_CONFIG.MIN_DISTRIBUTED_DISTANCE) {
+            if (isPowerConnection) {
+                const routingX = startX - WIRE_ROUTING_CONFIG.HORIZONTAL_OFFSET_LEFT;
+                const routingY = deltaY > 0 ?
+                    Math.max(startY, endY) + WIRE_ROUTING_CONFIG.VERTICAL_OFFSET + totalOffset :
+                    Math.min(startY, endY) - WIRE_ROUTING_CONFIG.VERTICAL_OFFSET + totalOffset;
+
+                points.push({ x: routingX, y: startY });
+                points.push({ x: routingX, y: routingY });
+                points.push({ x: endX - WIRE_ROUTING_CONFIG.HORIZONTAL_OFFSET_LEFT, y: routingY });
+                points.push({ x: endX - WIRE_ROUTING_CONFIG.HORIZONTAL_OFFSET_LEFT, y: endY });
+            } else {
+                const routingLane = Math.abs(startY - endY) > 200 ?
+                    Math.min(startY, endY) + Math.abs(startY - endY) * 0.3 + totalOffset :
+                    (startY + endY) / 2 + totalOffset;
+
+                if (startDir === (LiteGraph?.RIGHT || 4)) {
+                    points.push({ x: startX + WIRE_ROUTING_CONFIG.HORIZONTAL_OFFSET_RIGHT, y: startY });
+                    points.push({ x: startX + WIRE_ROUTING_CONFIG.HORIZONTAL_OFFSET_RIGHT, y: routingLane });
+                } else if (startDir === (LiteGraph?.LEFT || 3)) {
+                    points.push({ x: startX - WIRE_ROUTING_CONFIG.HORIZONTAL_OFFSET_LEFT, y: startY });
+                    points.push({ x: startX - WIRE_ROUTING_CONFIG.HORIZONTAL_OFFSET_LEFT, y: routingLane });
+                } else {
+                    points.push({ x: startX + WIRE_ROUTING_CONFIG.HORIZONTAL_OFFSET_RIGHT, y: startY });
+                    points.push({ x: startX + WIRE_ROUTING_CONFIG.HORIZONTAL_OFFSET_RIGHT, y: routingLane });
+                }
+
+                if (endDir === (LiteGraph?.RIGHT || 4)) {
+                    points.push({ x: endX + WIRE_ROUTING_CONFIG.HORIZONTAL_OFFSET_RIGHT, y: routingLane });
+                    points.push({ x: endX + WIRE_ROUTING_CONFIG.HORIZONTAL_OFFSET_RIGHT, y: endY });
+                } else if (endDir === (LiteGraph?.LEFT || 3)) {
+                    points.push({ x: endX - WIRE_ROUTING_CONFIG.HORIZONTAL_OFFSET_LEFT, y: routingLane });
+                    points.push({ x: endX - WIRE_ROUTING_CONFIG.HORIZONTAL_OFFSET_LEFT, y: endY });
+                } else {
+                    points.push({ x: endX - WIRE_ROUTING_CONFIG.HORIZONTAL_OFFSET_LEFT, y: routingLane });
+                    points.push({ x: endX - WIRE_ROUTING_CONFIG.HORIZONTAL_OFFSET_LEFT, y: endY });
+                }
+            }
+        } else {
+            if (Math.abs(deltaY) > WIRE_ROUTING_CONFIG.MIN_VERTICAL_DISTANCE) {
+                if (isPowerConnection) {
+                    const routingX = startX - WIRE_ROUTING_CONFIG.HORIZONTAL_OFFSET_LEFT;
+                    const routingY = deltaY > 0 ?
+                        Math.max(startY, endY) + WIRE_ROUTING_CONFIG.VERTICAL_OFFSET + totalOffset :
+                        Math.min(startY, endY) - WIRE_ROUTING_CONFIG.VERTICAL_OFFSET + totalOffset;
+
+                    points.push({ x: routingX, y: startY });
+                    points.push({ x: routingX, y: routingY });
+                    points.push({ x: endX - WIRE_ROUTING_CONFIG.HORIZONTAL_OFFSET_LEFT, y: routingY });
+                    points.push({ x: endX - WIRE_ROUTING_CONFIG.HORIZONTAL_OFFSET_LEFT, y: endY });
+                } else {
+                    const routingY = deltaY > 0 ?
+                        Math.max(startY, endY) + WIRE_ROUTING_CONFIG.VERTICAL_OFFSET + totalOffset :
+                        Math.min(startY, endY) - WIRE_ROUTING_CONFIG.VERTICAL_OFFSET + totalOffset;
+
+                    if (startDir === (LiteGraph?.RIGHT || 4)) {
+                        points.push({ x: startX + WIRE_ROUTING_CONFIG.HORIZONTAL_OFFSET_RIGHT, y: startY });
+                        points.push({ x: startX + WIRE_ROUTING_CONFIG.HORIZONTAL_OFFSET_RIGHT, y: routingY });
+                    } else if (startDir === (LiteGraph?.LEFT || 3)) {
+                        points.push({ x: startX - WIRE_ROUTING_CONFIG.HORIZONTAL_OFFSET_LEFT, y: startY });
+                        points.push({ x: startX - WIRE_ROUTING_CONFIG.HORIZONTAL_OFFSET_LEFT, y: routingY });
+                    } else {
+                        points.push({ x: startX + WIRE_ROUTING_CONFIG.HORIZONTAL_OFFSET_RIGHT, y: startY });
+                        points.push({ x: startX + WIRE_ROUTING_CONFIG.HORIZONTAL_OFFSET_RIGHT, y: routingY });
+                    }
+
+                    if (endDir === (LiteGraph?.RIGHT || 4)) {
+                        points.push({ x: endX + WIRE_ROUTING_CONFIG.HORIZONTAL_OFFSET_RIGHT, y: routingY });
+                        points.push({ x: endX + WIRE_ROUTING_CONFIG.HORIZONTAL_OFFSET_RIGHT, y: endY });
+                    } else if (endDir === (LiteGraph?.LEFT || 3)) {
+                        points.push({ x: endX - WIRE_ROUTING_CONFIG.HORIZONTAL_OFFSET_LEFT, y: routingY });
+                        points.push({ x: endX - WIRE_ROUTING_CONFIG.HORIZONTAL_OFFSET_LEFT, y: endY });
+                    } else {
+                        points.push({ x: endX - WIRE_ROUTING_CONFIG.HORIZONTAL_OFFSET_LEFT, y: routingY });
+                        points.push({ x: endX - WIRE_ROUTING_CONFIG.HORIZONTAL_OFFSET_LEFT, y: endY });
+                    }
+                }
+            } else {
+                if (isPowerConnection) {
+                    const routingX = startX - WIRE_ROUTING_CONFIG.HORIZONTAL_OFFSET_LEFT;
+                    const routingY = deltaY > 0 ?
+                        Math.max(startY, endY) + WIRE_ROUTING_CONFIG.VERTICAL_OFFSET * 0.5 + totalOffset :
+                        Math.min(startY, endY) - WIRE_ROUTING_CONFIG.VERTICAL_OFFSET * 0.5 + totalOffset;
+
+                    points.push({ x: routingX, y: startY });
+                    points.push({ x: routingX, y: routingY });
+                    points.push({ x: endX - WIRE_ROUTING_CONFIG.HORIZONTAL_OFFSET_LEFT, y: routingY });
+                    points.push({ x: endX - WIRE_ROUTING_CONFIG.HORIZONTAL_OFFSET_LEFT, y: endY });
+                } else {
+                    const offset = WIRE_ROUTING_CONFIG.HORIZONTAL_OFFSET_RIGHT * 0.5;
+                    if (startDir === (LiteGraph?.RIGHT || 4)) {
+                        points.push({ x: startX + offset + totalOffset, y: startY });
+                    } else if (startDir === (LiteGraph?.LEFT || 3)) {
+                        points.push({ x: startX - WIRE_ROUTING_CONFIG.HORIZONTAL_OFFSET_LEFT * 0.5 + totalOffset, y: startY });
+                    } else {
+                        points.push({ x: startX + offset + totalOffset, y: startY });
+                    }
+
+                    if (endDir === (LiteGraph?.RIGHT || 4)) {
+                        points.push({ x: endX + offset + totalOffset, y: endY });
+                    } else if (endDir === (LiteGraph?.LEFT || 3)) {
+                        points.push({ x: endX - WIRE_ROUTING_CONFIG.HORIZONTAL_OFFSET_LEFT * 0.5 + totalOffset, y: endY });
+                    } else {
+                        points.push({ x: endX - offset + totalOffset, y: endY });
+                    }
+                }
+            }
+        }
+
+        points.push({ x: endX, y: endY });
+
+        return points;
+    }
+
+    function drawConnectionArrow(ctx, fromPoint, toPoint, color) {
+        const headLength = 12;
+        const angle = Math.atan2(toPoint.y - fromPoint.y, toPoint.x - fromPoint.x);
+
+        ctx.strokeStyle = color || "#ffffff";
+        ctx.fillStyle = color || "#ffffff";
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        ctx.beginPath();
+        ctx.moveTo(toPoint.x, toPoint.y);
+        ctx.lineTo(
+            toPoint.x - headLength * Math.cos(angle - Math.PI / 6),
+            toPoint.y - headLength * Math.sin(angle - Math.PI / 6)
+        );
+        ctx.moveTo(toPoint.x, toPoint.y);
+        ctx.lineTo(
+            toPoint.x - headLength * Math.cos(angle + Math.PI / 6),
+            toPoint.y - headLength * Math.sin(angle + Math.PI / 6)
+        );
+        ctx.stroke();
+    }
+
+    function isNodeInGroup(node, group) {
+        if (!node || !group) return false;
+
+        const nodeX = node.pos[0];
+        const nodeY = node.pos[1];
+        const nodeWidth = node.size[0];
+        const nodeHeight = node.size[1];
+
+        const groupX = group.pos[0];
+        const groupY = group.pos[1];
+        const groupWidth = group.size ? group.size[0] : 200;
+        const groupHeight = group.size ? group.size[1] : 100;
+
+        return nodeX >= groupX && nodeX + nodeWidth <= groupX + groupWidth &&
+               nodeY >= groupY && nodeY + nodeHeight <= groupY + groupHeight;
+    }
+
+    function calculateGroupEdgeRouting(startPos, endPos, startGroup, endGroup, startDir, endDir) {
+        const points = [];
+
+        points.push({ x: startPos[0], y: startPos[1] });
+
+        const startExit = getGroupEdgePoint(startPos, startGroup, startDir);
+        points.push(startExit);
+
+        const intermediatePoints = calculateIntermediateRouting(startExit, endPos, startGroup, endGroup);
+        points.push(...intermediatePoints);
+
+        const endEntry = getGroupEdgePoint(endPos, endGroup, endDir);
+        points.push(endEntry);
+
+        points.push({ x: endPos[0], y: endPos[1] });
+
+        return points;
+    }
+
+    function getGroupEdgePoint(pos, group, direction) {
+        const groupX = group.pos[0];
+        const groupY = group.pos[1];
+        const groupWidth = group.size ? group.size[0] : 200;
+        const groupHeight = group.size ? group.size[1] : 100;
+
+        switch (direction) {
+            case LiteGraph.RIGHT:
+                return { x: groupX + groupWidth, y: pos[1] };
+            case LiteGraph.LEFT:
+                return { x: groupX, y: pos[1] };
+            case LiteGraph.DOWN:
+                return { x: pos[0], y: groupY + groupHeight };
+            case LiteGraph.UP:
+                return { x: pos[0], y: groupY };
+            default:
+                return { x: pos[0], y: pos[1] };
+        }
+    }
+
+    function calculateIntermediateRouting(startPoint, endPoint, startGroup, endGroup) {
+        const points = [];
+
+        const midY = (startPoint.y + endPoint.y) / 2;
+
+        if (Math.abs(startGroup.pos[1] - endGroup.pos[1]) > 50) {
+            points.push({ x: startPoint.x, y: midY });
+            points.push({ x: endPoint.x, y: midY });
+        } else {
+            points.push({ x: (startPoint.x + endPoint.x) / 2, y: startPoint.y });
+            points.push({ x: (startPoint.x + endPoint.x) / 2, y: endPoint.y });
+        }
+
+        return points;
+    }
+
+    function drawConnectionArrow(ctx, fromPoint, toPoint, color) {
+        const headLength = 10;
+        const angle = Math.atan2(toPoint.y - fromPoint.y, toPoint.x - fromPoint.x);
+
+        ctx.strokeStyle = color || "#ffffff";
+        ctx.fillStyle = color || "#ffffff";
+        ctx.lineWidth = 2;
+
+        ctx.beginPath();
+        ctx.moveTo(toPoint.x, toPoint.y);
+        ctx.lineTo(
+            toPoint.x - headLength * Math.cos(angle - Math.PI / 6),
+            toPoint.y - headLength * Math.sin(angle - Math.PI / 6)
+        );
+        ctx.moveTo(toPoint.x, toPoint.y);
+        ctx.lineTo(
+            toPoint.x - headLength * Math.cos(angle + Math.PI / 6),
+            toPoint.y - headLength * Math.sin(angle + Math.PI / 6)
+        );
+        ctx.stroke();
+    }
+
     function getJsonData() {
         return {
             locations: window.locationsJson || [],
@@ -602,7 +979,25 @@
         }, 10000);
     }
 
-    // --- START ---
     document.addEventListener('DOMContentLoaded', initialize);
+
+    function initializeCustomRendering(canvas) {
+        if (!canvas) {
+            return;
+        }
+
+        const originalRenderLink = canvas.renderLink;
+
+        canvas.renderLink = function(ctx, a, b, link, skip_border, flow, color, start_dir, end_dir, num_sublines) {
+            if (link && link.route_along_groups) {
+                const customRendered = renderRoutedConnection(ctx, a, b, link, skip_border, flow, color, start_dir, end_dir, num_sublines);
+                if (customRendered) {
+                    return;
+                }
+            }
+
+            originalRenderLink.call(this, ctx, a, b, link, skip_border, flow, color, start_dir, end_dir, num_sublines);
+        };
+    }
 
 })();
