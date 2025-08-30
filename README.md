@@ -1,95 +1,130 @@
 # Net Ledger
 
-[View Project Plan](projectPlan.md)
-
 A comprehensive network inventory and asset management system, serving as a single source of truth for all network devices, services, and connections.
 
-✨ Features
+## ✨ Features
 
-*   **Precise Asset Tracking**: Meticulously track and manage all network devices, cards, and interfaces.
-*   **Hierarchical Location Management**: Organize devices within a logical, nested location hierarchy (e.g., room > rack > rack unit).
-*   **Automated Device Provisioning**: Rapidly add new devices using predefined templates.
-*   **Dynamic Network Visualization**: Visualize network topology in an interactive graph, with color-coded connections and locations represented as groups. The user's local device is a clearly distinct node.
-*   **Automated Discovery**: Automatically scan the network using protocols like SNMP, LLDP, and ARP to discover and onboard new assets.
-*   **Peer-to-Peer Data Sharing**: Enable multiple instances of Net Ledger to discover each other and synchronize data.
+*   **Precise Asset Tracking**: Meticulously track and manage all network devices, cards, and interfaces
+*   **Hierarchical Location Management**: Organize devices within a logical, nested location hierarchy (e.g., room > rack > rack unit)
+*   **Automated Device Provisioning**: Rapidly add new devices using predefined templates
+*   **Interactive Network Visualization**: Dynamic network topology visualization with:
+    - Color-coded connections based on cable types (Cat6 = purple, Cat5e = cyan, Fiber = amber, etc.)
+    - Hierarchical location groups representing physical spaces
+    - Device-to-service logical connections in blue
+    - Physical device-to-device connections with cable-specific colors
+    - Real-time interactive graph using litegraph.js
+*   **Automated Discovery**: Automatically scan the network using protocols like SNMP, LLDP, and ARP to discover and onboard new assets
+*   **Peer-to-Peer Data Sharing**: Enable multiple instances of Net Ledger to discover each other and synchronize data
 
-🏛️ Architecture
+## 🏛️ Architecture
 
 ### Database Schema
 
-Net Ledger is built on a relational database schema designed for flexibility and scalability. Key relationships include:
+Net Ledger is built on a relational database schema designed for flexibility and scalability:
 
-*   A `Device` can have multiple `IP_Address` entries.
-*   An `IP_Address` can host multiple `Service` instances on different ports.
-*   A central `History` table logs all changes to assets for auditing purposes.
+- **Locations**: Hierarchical organization (building → room → rack → rack unit)
+- **Devices**: Network equipment with detailed specifications
+- **Interfaces**: Physical and logical network interfaces
+- **Connections**: Physical cable connections between devices with cable type information
+- **Services**: Network services bound to IP addresses and ports
+- **IP Addresses**: IP address management and allocation
+- **History**: Complete audit trail of all asset changes
 
 ### Network Visualization
 
-The frontend uses a powerful node-based editor, `litegraph.js`, to render the network topology.
+The frontend uses `litegraph.js` to render an interactive node-based network topology:
 
-*   **Groups** represent physical `Locations`.
-*   **Nodes** represent `Devices` and `Services`.
-*   **Color-coded wires** visually distinguish connections between `IP_Address` and `Service` nodes.
+*   **Groups**: Represent physical `Locations` in a hierarchical structure
+*   **Device Nodes**: Show network equipment with interface details
+*   **Service Nodes**: Display services bound to specific IP addresses and ports
+*   **Color-Coded Connections**:
+    - **Physical Connections**: Colored by cable type from database
+    - **Logical Connections**: Blue wires connecting devices to their services
+    - **Power Connections**: Red wires for power interfaces
 
-🚀 Technology Stack
+## 🚀 Technology Stack
 
-*   **Backend**: Laravel
-*   **Frontend**: TALL Stack (Tailwind CSS, Alpine.js, Livewire)
+*   **Backend**: Laravel 12.26.2
+*   **Frontend**: TALL Stack (Tailwind CSS 4.1.12, Alpine.js, Livewire 3.6.4)
 *   **Database**: SQLite
-*   **Visualization**: litegraph.js, vis-timeline
+*   **Visualization**: litegraph.js
+*   **Build Tools**: Vite, PostCSS
+*   **Code Quality**: Laravel Pint 1.24.0
 
-🛠️ Getting Started
-
-To get a local copy up and running, follow these steps.
+## 🛠️ Getting Started
 
 ### Prerequisites
 
-*   PHP >= 8.0
+*   PHP >= 8.4
 *   Composer
 *   Node.js & npm
 *   SQLite3
 
 ### Installation
 
-1.  Clone the repository:
+1.  **Clone the repository**:
     ```sh
-    git clone https://github.com/your-username/net-ledger.git
+    git clone https://github.com/CharlesLennon/net-ledger.git
     cd net-ledger
     ```
-2.  Install backend dependencies:
+
+2.  **Install backend dependencies**:
     ```sh
     composer install
     ```
-3.  Install frontend dependencies:
+
+3.  **Install frontend dependencies**:
     ```sh
     npm install
     ```
-4.  Set up your environment:
+
+4.  **Set up environment**:
     ```sh
     cp .env.example .env
     php artisan key:generate
     ```
-5.  Run database migrations and seed data:
+
+5.  **Set up database**:
     ```sh
     php artisan migrate --seed
     ```
-6.  Start the local development server:
+
+6.  **Build assets and start development server**:
     ```sh
-    npm run dev & php artisan serve
+    npm run dev
+    ```
+
+7.  **Start Laravel server** (in a new terminal):
+    ```sh
+    php artisan serve
     ```
 
 Your application will be available at http://localhost:8000.
 
-🗺️ Roadmap
+### Network Visualization Features
 
-*   **Phase 1: Backend & Database**: Implement the core database schema and provisioning logic.
-*   **Phase 2: Frontend & UI**: Build the user interface with the TALL stack and integrate the interactive network visualization.
-*   **Phase 3: Automated Discovery**: Develop and integrate network scanning capabilities to automate data entry.
-*   **Phase 4: Peer-to-Peer Networking**: Implement host discovery and data synchronization features for collaborative use.
+Once running, navigate to the network view to see:
 
-🤝 Contributing
+- **Hierarchical Groups**: Locations organized by building/room/rack structure
+- **Device Nodes**: Network equipment with interface details
+- **Service Nodes**: Services connected to specific IP addresses
+- **Color-Coded Connections**:
+  - Purple wires for Cat6 cables
+  - Cyan wires for Cat5e cables
+  - Amber wires for fiber connections
+  - Blue wires for logical device-to-service connections
+  - Red wires for power connections
 
-Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are greatly appreciated.
+## 🗺️ Roadmap
+
+*   **Phase 1: Backend & Database** ✅ - Core database schema and provisioning logic implemented
+*   **Phase 2: Frontend & UI** ✅ - TALL stack interface with interactive network visualization
+*   **Phase 3: Automated Discovery** - Network scanning capabilities for automated data entry
+*   **Phase 4: Peer-to-Peer Networking** - Host discovery and data synchronization features
+
+## 🤝 Contributing
+
+Contributions are welcome! Please follow these steps:
 
 1.  Fork the Project
 2.  Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
@@ -97,8 +132,10 @@ Contributions are what make the open-source community such an amazing place to l
 4.  Push to the Branch (`git push origin feature/AmazingFeature`)
 5.  Open a Pull Request
 
-📄 License
+## 📄 License
 
 Distributed under the MIT License. See `LICENSE` for more information.
 
-[View Project Plan](projectPlan.md)
+---
+
+[View Detailed Project Plan](projectPlan.md)
