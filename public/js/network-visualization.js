@@ -3,30 +3,30 @@
     
     // Node appearance colors
     const NODE_TEXT_COLOR = "#FFFFFF";          // White text inside nodes for readability on dark backgrounds
-    const NODE_BG_COLOR = "#2d3748";            // Dark gray background for device/service nodes (Tailwind gray-700)
-    const NODE_TITLE_BG_COLOR = "#e4870eff";    // Orange title bar background for node headers (custom orange with opacity)
-    const NODE_TITLE_TEXT_COLOR = "#FFFFFF";    // White text on orange title bars for maximum contrast
+    const NODE_BG_COLOR = "#2d3748";            // Dark background for device/service nodes
+    const NODE_TITLE_BG_COLOR = "#e4870eff";    // Orange title bar background for node headers
+    const NODE_TITLE_TEXT_COLOR = "#FFFFFF";    // White text on title bars for maximum contrast
     
     // Location group visual hierarchy colors
-    const GROUP_CHILD_COLOR = "#4a5568";        // Medium gray for child location groups (Tailwind gray-600)
-    const GROUP_ROOT_COLOR = "#2b6cb0";         // Blue for root/main location groups (Tailwind blue-600)
+    const GROUP_CHILD_COLOR = "#4a5568";        // Medium color for child location groups
+    const GROUP_ROOT_COLOR = "#2b6cb0";         // Distinct color for root/main location groups
 
     // Connection and wire color definitions
     const CONNECTION_COLORS = {
         // Logical connection types
-        INTERFACE_PHYSICAL: "#10b981",      // Green - physical network interfaces (ethernet, fiber, etc)
-        INTERFACE_LOGICAL: "#3b82f6",       // Blue - logical connections (PCI lanes, software links)
-        POWER: "#ef4444",                   // Red - power connections from PDUs to devices
-        MANAGEMENT: "#f59e0b",              // Amber - management/console connections (IPMI, SSH, etc)
-        DEFAULT: "#9ca3af",                 // Gray - fallback color for unspecified connection types
-        PCI_LANE: "#8b5cf6",               // Purple - PCI Express lanes between motherboard and cards
+        INTERFACE_PHYSICAL: "#10b981",      // Physical network interfaces
+        INTERFACE_LOGICAL: "#3b82f6",       // Logical connections and PCI lanes
+        POWER: "#ef4444",                   // Power connections from PDUs to devices
+        MANAGEMENT: "#f59e0b",              // Management/console connections
+        DEFAULT: "#9ca3af",                 // Fallback color for unspecified connection types
+        PCI_LANE: "#8b5cf6",               // PCI Express lanes between motherboard and cards
         
-        // Physical cable type colors (matching industry standards where possible)
-        CABLE_CAT6: "#8b5cf6",             // Purple - CAT6 ethernet cables (high-speed network)
-        CABLE_CAT5E: "#06b6d4",            // Cyan - CAT5e ethernet cables (standard network)
-        CABLE_FIBER: "#f59e0b",            // Amber - fiber optic cables (long-distance/high-bandwidth)
-        CABLE_COPPER: "#10b981",           // Green - copper cables (general networking)
-        CABLE_COAXIAL: "#ef4444",          // Red - coaxial cables (legacy/specialized connections)
+        // Physical cable type colors
+        CABLE_CAT6: "#8b5cf6",             // CAT6 ethernet cables
+        CABLE_CAT5E: "#06b6d4",            // CAT5e ethernet cables
+        CABLE_FIBER: "#f59e0b",            // Fiber optic cables
+        CABLE_COPPER: "#10b981",           // Copper cables
+        CABLE_COAXIAL: "#ef4444",          // Coaxial cables
     };
 
     // Layout and positioning configuration
@@ -43,7 +43,7 @@
         GROUP_PADDING: 10,                      // Inner padding around location group contents
         GROUP_TITLE_HEIGHT: 80,                 // Height reserved for location group title bars
         
-        // Service node sizing (dynamic based on number of connections)
+        // Service node sizing
         SERVICE_NODE_MIN_HEIGHT: 35,            // Minimum height for service nodes
         SERVICE_HEIGHT_PER_INPUT: 10,           // Additional height per input connection
     };
@@ -53,7 +53,7 @@
         PAN_SPEED: 20,                  // Base pixels per keypress for WASD panning
         SMOOTH_PANNING: true,           // Enable smooth camera transitions vs instant movement
         PAN_ACCELERATION: 1.5,          // Multiplier for how fast panning speeds up when held
-        ZOOM_SPEED: 0.1,               // Zoom increment per scroll wheel step (0.1 = 10% per step)
+        ZOOM_SPEED: 0.1,               // Zoom increment per scroll wheel step
     };
 
     // Wire routing and cable management configuration
@@ -69,19 +69,19 @@
         
         // Visual wire spacing and styling
         WIRE_SPACING: 25,                       // Pixel spacing between parallel wires in bundles
-        CORNER_RADIUS: 15,                      // Border radius for rounded wire corners (pixels)
+        CORNER_RADIUS: 15,                      // Border radius for rounded wire corners
         MAX_WIRES_PER_CHANNEL: 3,              // Maximum wires before creating new routing channel
         WIRE_OFFSET_INCREMENT: 10,              // Pixel increment for offsetting overlapping wires
     };
 
     // Animated particle effects for data flow visualization
     const PARTICLE_CONFIG = {
-        SPEED: 1.5,                            // Animation speed multiplier (higher = faster particles)
+        SPEED: 1.5,                            // Animation speed multiplier
         SIZE: 4,                               // Particle diameter in pixels
-        SPACING: 80,                           // Distance between particles along each wire (pixels)
+        SPACING: 80,                           // Distance between particles along each wire
         COLOR: "#ffffff",                      // Particle and trail color (white for visibility)
         TRAIL_LENGTH: 8,                       // Number of fading trail points behind each particle
-        SHOW_ONLY_ON_SELECTED: true,           // true = particles only on selected nodes, false = particles on all wires
+        SHOW_ONLY_ON_SELECTED: true,           // Show particles only on selected nodes vs all wires
     };
 
     // Global particle tracking for animation cleanup
@@ -182,13 +182,12 @@
         }
 
         setPciCardData(cardData) {
-            this.cardData = cardData; // Store card data for later access
+            this.cardData = cardData;
             this.title = cardData.model_name;
             const textWidth = this.title.length * 7;
             this.size[0] = Math.max(180, textWidth + 40);
             this.size[1] = 60;
 
-            // Add output for the card type (network cards might have network outputs)
             if (cardData.type === 'Network') {
                 // Add multiple RJ45 ports for network cards - use "interface" type to match switches
                 this.addOutput("RJ45-1", "interface");
@@ -648,12 +647,10 @@
                 }
             }
 
-            // If this is a network card, connect RJ45 outputs to switches
             if (card.type === 'Network') {
                 const rj45Outputs = pciCardNode.outputs.filter(output => output.name && output.name.startsWith("RJ45"));
                 
                 rj45Outputs.forEach((rj45Output, index) => {
-                    // Find switch nodes using the nodeMap
                     const allDeviceNodes = Array.from(nodeMap.values()).filter(node => 
                         node && node.title && typeof node.title === 'string' && (
                             node.title.toLowerCase().includes("switch") || 
@@ -681,16 +678,14 @@
                             interfaceInputIndex = switchNode.inputs.length - 1;
                         }
                         
-                        // Find the index of the RJ45 output
                         const rj45OutputIndex = pciCardNode.outputs.findIndex(output => output === rj45Output);
                         
                         if (rj45OutputIndex !== -1 && interfaceInputIndex !== -1) {
                             const link = pciCardNode.connect(rj45OutputIndex, switchNode, interfaceInputIndex);
                             if (link) {
-                                // Determine cable type based on card type and connection
-                                let cableType = 'cat6'; // Default for network cards
+                                let cableType = 'cat6';
                                 if (card.model_name && card.model_name.toLowerCase().includes('10gbe')) {
-                                    cableType = 'cat6'; // 10GbE typically uses CAT6
+                                    cableType = 'cat6';
                                 } else if (card.model_name && card.model_name.toLowerCase().includes('fiber')) {
                                     cableType = 'fiber';
                                 }
@@ -1246,7 +1241,7 @@
             case 'power':
                 return CONNECTION_COLORS.POWER;
             default:
-                return CONNECTION_COLORS.INTERFACE_PHYSICAL; // Default fallback
+                return CONNECTION_COLORS.INTERFACE_PHYSICAL;
         }
     }
 
