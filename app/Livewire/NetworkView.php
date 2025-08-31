@@ -54,6 +54,26 @@ class NetworkView extends Component implements JsonSerializable // Implement the
             ];
         })->toArray();
 
+        $pciSlots = \App\Models\PcieSlot::with('device')->get()->map(function ($slot) {
+            return [
+                'slot_id' => $slot->slot_id,
+                'device_serial_number' => $slot->device_serial_number,
+                'physical_lane_count' => $slot->physical_lane_count,
+                'wired_lane_count' => $slot->wired_lane_count
+            ];
+        })->toArray();
+
+        $pciCards = \App\Models\PcieCard::with('pcieSlot.device')->get()->map(function ($card) {
+            return [
+                'card_serial_number' => $card->card_serial_number,
+                'model_name' => $card->model_name,
+                'type' => $card->type,
+                'slot_id' => $card->slot_id,
+                'device_serial_number' => $card->pcieSlot->device_serial_number ?? null,
+                'display_name' => $card->model_name . ' (' . $card->card_serial_number . ')'
+            ];
+        })->toArray();
+
         $deviceIPs = \App\Models\Device::with('ipAddresses')->get()->map(function ($device) {
             return [
                 'device_serial_number' => $device->serial_number,
@@ -81,6 +101,8 @@ class NetworkView extends Component implements JsonSerializable // Implement the
             'connections' => $connections,
             'ipAddresses' => $ipAddresses,
             'deviceIPs' => $deviceIPs,
+            'pciSlots' => $pciSlots,
+            'pciCards' => $pciCards,
         ]);
     }
 

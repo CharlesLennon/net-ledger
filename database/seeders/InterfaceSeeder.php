@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Device;
 use App\Models\DeviceInterface;
+use App\Models\PcieCard;
 use Illuminate\Database\Seeder;
 
 class InterfaceSeeder extends Seeder
@@ -110,6 +111,36 @@ class InterfaceSeeder extends Seeder
                     'interface_type' => 'RJ45',
                     'label' => 'mgmt0',
                     'device_serial_number' => $device->serial_number,
+                ]);
+            }
+        }
+
+        // Create interfaces for PCI cards
+        $pciCards = PcieCard::all();
+        foreach ($pciCards as $pciCard) {
+            if ($pciCard->type === 'Network') {
+                // Network cards get RJ45 interfaces
+                for ($i = 1; $i <= 4; $i++) {
+                    DeviceInterface::create([
+                        'interface_type' => 'RJ45',
+                        'label' => "eth{$i}",
+                        'device_serial_number' => null, // PCI cards don't belong to devices directly
+                        'card_serial_number' => $pciCard->card_serial_number,
+                    ]);
+                }
+            } elseif ($pciCard->type === 'GPU') {
+                // GPU cards get display interfaces
+                DeviceInterface::create([
+                    'interface_type' => 'DisplayPort',
+                    'label' => 'dp0',
+                    'device_serial_number' => null,
+                    'card_serial_number' => $pciCard->card_serial_number,
+                ]);
+                DeviceInterface::create([
+                    'interface_type' => 'HDMI',
+                    'label' => 'hdmi0',
+                    'device_serial_number' => null,
+                    'card_serial_number' => $pciCard->card_serial_number,
                 ]);
             }
         }

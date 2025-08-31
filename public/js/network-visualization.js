@@ -1,66 +1,91 @@
 (function() {
-    // --- CONFIGURATION ---
-    const NODE_TEXT_COLOR = "#FFFFFF";
-    const NODE_BG_COLOR = "#2d3748";
-    const NODE_TITLE_BG_COLOR = "#e4870eff";
-    const NODE_TITLE_TEXT_COLOR = "#FFFFFF";
-    const GROUP_CHILD_COLOR = "#4a5568";
-    const GROUP_ROOT_COLOR = "#2b6cb0";
+    // --- VISUAL CONFIGURATION ---
+    
+    // Node appearance colors
+    const NODE_TEXT_COLOR = "#FFFFFF";          // White text inside nodes for readability on dark backgrounds
+    const NODE_BG_COLOR = "#2d3748";            // Dark background for device/service nodes
+    const NODE_TITLE_BG_COLOR = "#e4870eff";    // Orange title bar background for node headers
+    const NODE_TITLE_TEXT_COLOR = "#FFFFFF";    // White text on title bars for maximum contrast
+    
+    // Location group visual hierarchy colors
+    const GROUP_CHILD_COLOR = "#4a5568";        // Medium color for child location groups
+    const GROUP_ROOT_COLOR = "#2b6cb0";         // Distinct color for root/main location groups
 
+    // Connection and wire color definitions
     const CONNECTION_COLORS = {
-        INTERFACE_PHYSICAL: "#10b981",
-        INTERFACE_LOGICAL: "#3b82f6",
-        POWER: "#ef4444",
-        MANAGEMENT: "#f59e0b",
-        DEFAULT: "#9ca3af",
-        // Cable type colors
-        CABLE_CAT6: "#8b5cf6",      // Purple
-        CABLE_CAT5E: "#06b6d4",     // Cyan
-        CABLE_FIBER: "#f59e0b",     // Amber
-        CABLE_COPPER: "#10b981",    // Green
-        CABLE_COAXIAL: "#ef4444",   // Red
+        // Logical connection types
+        INTERFACE_PHYSICAL: "#10b981",      // Physical network interfaces
+        INTERFACE_LOGICAL: "#3b82f6",       // Logical connections and PCI lanes
+        POWER: "#ef4444",                   // Power connections from PDUs to devices
+        MANAGEMENT: "#f59e0b",              // Management/console connections
+        DEFAULT: "#9ca3af",                 // Fallback color for unspecified connection types
+        PCI_LANE: "#8b5cf6",               // PCI Express lanes between motherboard and cards
+        
+        // Physical cable type colors
+        CABLE_CAT6: "#8b5cf6",             // CAT6 ethernet cables
+        CABLE_CAT5E: "#06b6d4",            // CAT5e ethernet cables
+        CABLE_FIBER: "#f59e0b",            // Fiber optic cables
+        CABLE_COPPER: "#10b981",           // Copper cables
+        CABLE_COAXIAL: "#ef4444",          // Coaxial cables
     };
 
+    // Layout and positioning configuration
     const SPACING_CONFIG = {
-        DEVICE_TO_SERVICE_HORIZONTAL: 120,
-        SERVICE_VERTICAL_SPACING: 80,
-        DEVICE_ROW_SPACING: 40,
-        GROUP_VERTICAL_SPACING: 50,
-        GROUP_PADDING: 10,
-        GROUP_TITLE_HEIGHT: 80,
-        SERVICE_NODE_MIN_HEIGHT: 35,
-        SERVICE_HEIGHT_PER_INPUT: 10,
+        // Horizontal spacing between devices and their connected services
+        DEVICE_TO_SERVICE_HORIZONTAL: 120,      // Pixels between device nodes and service nodes
+        
+        // Vertical spacing between elements
+        SERVICE_VERTICAL_SPACING: 80,           // Vertical gap between service nodes in the same column
+        DEVICE_ROW_SPACING: 40,                 // Vertical gap between device rows within a location
+        GROUP_VERTICAL_SPACING: 50,             // Vertical gap between different location groups
+        
+        // Group container styling
+        GROUP_PADDING: 10,                      // Inner padding around location group contents
+        GROUP_TITLE_HEIGHT: 80,                 // Height reserved for location group title bars
+        
+        // Service node sizing
+        SERVICE_NODE_MIN_HEIGHT: 35,            // Minimum height for service nodes
+        SERVICE_HEIGHT_PER_INPUT: 10,           // Additional height per input connection
     };
 
+    // Keyboard navigation and camera controls
     const KEYBOARD_CONFIG = {
-        PAN_SPEED: 20,
-        SMOOTH_PANNING: true,
-        PAN_ACCELERATION: 1.5,
-        ZOOM_SPEED: 0.1,
+        PAN_SPEED: 20,                  // Base pixels per keypress for WASD panning
+        SMOOTH_PANNING: true,           // Enable smooth camera transitions vs instant movement
+        PAN_ACCELERATION: 1.5,          // Multiplier for how fast panning speeds up when held
+        ZOOM_SPEED: 0.1,               // Zoom increment per scroll wheel step
     };
 
+    // Wire routing and cable management configuration
     const WIRE_ROUTING_CONFIG = {
-        HORIZONTAL_OFFSET_RIGHT: 520,
-        HORIZONTAL_OFFSET_LEFT: 350,
-        VERTICAL_OFFSET: 80,
-        MIN_DISTRIBUTED_DISTANCE: 300,
-        MIN_VERTICAL_DISTANCE: 50,
-        WIRE_SPACING: 25,
-        CORNER_RADIUS: 15,
-        MAX_WIRES_PER_CHANNEL: 3,
-        WIRE_OFFSET_INCREMENT: 10,
+        // Horizontal positioning of wire routing channels
+        HORIZONTAL_OFFSET_RIGHT: 1020,          // X position for right-side vertical wire channel
+        HORIZONTAL_OFFSET_LEFT: 350,            // X position for left-side vertical wire channel
+        
+        // Wire bundling and distribution
+        VERTICAL_OFFSET: 5,                     // Base Y offset for wire routing paths
+        MIN_DISTRIBUTED_DISTANCE: 100,         // Minimum pixel distance to enable wire distribution
+        MIN_VERTICAL_DISTANCE: 50,              // Minimum vertical gap before using intermediate routing
+        
+        // Visual wire spacing and styling
+        WIRE_SPACING: 25,                       // Pixel spacing between parallel wires in bundles
+        CORNER_RADIUS: 15,                      // Border radius for rounded wire corners
+        MAX_WIRES_PER_CHANNEL: 3,              // Maximum wires before creating new routing channel
+        WIRE_OFFSET_INCREMENT: 10,              // Pixel increment for offsetting overlapping wires
     };
 
+    // Animated particle effects for data flow visualization
     const PARTICLE_CONFIG = {
-        SPEED: 1.5,                    // Animation speed of particles
-        SIZE: 4,                       // Size of particle balls in pixels
-        SPACING: 80,                   // Distance between particles on each wire
-        COLOR: "#ffffff",              // Color of particles and trails
-        TRAIL_LENGTH: 8,               // Number of trail points behind each particle
-        SHOW_ONLY_ON_SELECTED: true,   // true = particles only on selected nodes, false = particles on all wires
+        SPEED: 1.5,                            // Animation speed multiplier
+        SIZE: 4,                               // Particle diameter in pixels
+        SPACING: 80,                           // Distance between particles along each wire
+        COLOR: "#ffffff",                      // Particle and trail color (white for visibility)
+        TRAIL_LENGTH: 8,                       // Number of fading trail points behind each particle
+        SHOW_ONLY_ON_SELECTED: true,           // Show particles only on selected nodes vs all wires
     };
 
-    let activeParticles = new Map();
+    // Global particle tracking for animation cleanup
+    let activeParticles = new Map();            // Stores active particle animations by link ID
 
     class DeviceNode extends window.LGraphNode {
         constructor() {
@@ -73,7 +98,8 @@
         }
 
         setDeviceData(deviceData, deviceInterfaces) {
-            this.title = deviceData.display_name;
+            this.deviceData = deviceData; // Store device data for later access
+            this.title = deviceData.model_name;
             const textWidth = this.title.length * 8;
             this.size[0] = Math.max(200, textWidth + 40);
             this.size[1] = 60;
@@ -145,6 +171,40 @@
     ServiceNode.title_color = NODE_TITLE_BG_COLOR;
     ServiceNode.title_text_color = NODE_TITLE_TEXT_COLOR;
 
+    class PciCardNode extends window.LGraphNode {
+        constructor() {
+            super();
+            this.size = [180, 80];
+            this.color = NODE_TEXT_COLOR;
+            this.bgcolor = "#1a365d"; // Darker blue for PCI cards
+            this.resizable = false;
+            this.addInput("PCI Lane", "pci_lane");
+        }
+
+        setPciCardData(cardData) {
+            this.cardData = cardData;
+            this.title = cardData.model_name;
+            const textWidth = this.title.length * 7;
+            this.size[0] = Math.max(180, textWidth + 40);
+            this.size[1] = 60;
+
+            if (cardData.type === 'Network') {
+                // Add multiple RJ45 ports for network cards - use "interface" type to match switches
+                this.addOutput("RJ45-1", "interface");
+                this.addOutput("RJ45-2", "interface");
+                this.addOutput("RJ45-3", "interface");
+                this.addOutput("RJ45-4", "interface");
+                // Adjust node height for multiple ports
+                this.size[1] = 100;
+            } else if (cardData.type === 'GPU') {
+                this.addOutput("Display", "display");
+            }
+        }
+    }
+
+    PciCardNode.title_color = "#2b6cb0"; // Blue title for PCI cards
+    PciCardNode.title_text_color = NODE_TITLE_TEXT_COLOR;
+
     function initialize() {
         if (typeof window.LiteGraph === 'undefined') {
             showError('LiteGraph library not loaded. Please check your setup.');
@@ -153,6 +213,7 @@
 
         window.LiteGraph.registerNodeType("network/device", DeviceNode);
         window.LiteGraph.registerNodeType("network/service", ServiceNode);
+        window.LiteGraph.registerNodeType("network/pci-card", PciCardNode);
 
         const graph = new window.LiteGraph.LGraph();
         const canvas = new window.LGraphCanvas("#mycanvas", graph);
@@ -296,7 +357,7 @@
     }
 
     function createNetworkVisualization(graph) {
-        const { locations, devices, interfaces, connections, deviceIPs } = getJsonData();
+        const { locations, devices, interfaces, connections, deviceIPs, pciSlots, pciCards } = getJsonData();
         if (!locations.length && !devices.length) {
             showError('No locations or devices found in the database. Please run `php artisan migrate:fresh --seed`.');
             return;
@@ -310,7 +371,7 @@
         rootLocations.forEach(rootLoc => {
             const rootGroup = createGroup(graph, rootLoc.name, [50, currentY], GROUP_ROOT_COLOR);
             const groupContentY = currentY + SPACING_CONFIG.GROUP_TITLE_HEIGHT;
-            const contentDims = processLocation(graph, rootLoc, 70, groupContentY, rootGroup, nodeMap, serviceNodes);
+            const contentDims = processLocation(graph, rootLoc, 70, groupContentY, rootGroup, nodeMap, serviceNodes, pciCards);
             
             rootGroup.size[0] = Math.max(800, contentDims.width + SPACING_CONFIG.GROUP_PADDING);
             rootGroup.size[1] = Math.max(200, contentDims.height + SPACING_CONFIG.GROUP_TITLE_HEIGHT + SPACING_CONFIG.GROUP_PADDING);
@@ -319,16 +380,17 @@
 
         createPhysicalConnections(graph, connections, interfaces, nodeMap);
         createLogicalServiceConnections(nodeMap, serviceNodes);
+        createPciConnections(graph, pciCards, pciSlots, nodeMap);
     }
 
-    function processLocation(graph, location, startX, startY, parentGroup, nodeMap, serviceNodes) {
+    function processLocation(graph, location, startX, startY, parentGroup, nodeMap, serviceNodes, pciCards) {
         let currentX = startX;
         let currentY = startY + 20;
         let maxWidth = 0;
         let totalHeight = 0;
 
         location.devices.forEach(device => {
-            const { deviceNode, deviceWidth, deviceHeight } = createDeviceAndServiceNodes(graph, device, currentX, currentY, nodeMap, serviceNodes);
+            const { deviceNode, deviceWidth, deviceHeight } = createDeviceAndServiceNodes(graph, device, currentX, currentY, nodeMap, serviceNodes, pciCards);
             maxWidth = Math.max(maxWidth, deviceWidth);
             currentY += deviceHeight + SPACING_CONFIG.DEVICE_ROW_SPACING;
         });
@@ -337,7 +399,7 @@
         location.children.forEach(childLoc => {
             const childGroup = createGroup(graph, childLoc.name, [currentX, currentY], GROUP_CHILD_COLOR);
             const childGroupContentY = currentY + SPACING_CONFIG.GROUP_TITLE_HEIGHT;
-            const childDims = processLocation(graph, childLoc, currentX + 20, childGroupContentY, childGroup, nodeMap, serviceNodes);
+            const childDims = processLocation(graph, childLoc, currentX + 20, childGroupContentY, childGroup, nodeMap, serviceNodes, pciCards);
             
             childGroup.size[0] = Math.max(400, childDims.width + 40);
             childGroup.size[1] = Math.max(100, childDims.height + SPACING_CONFIG.GROUP_TITLE_HEIGHT + 40);
@@ -350,7 +412,7 @@
         return { width: maxWidth, height: totalHeight };
     }
 
-    function createDeviceAndServiceNodes(graph, device, x, y, nodeMap, serviceNodes) {
+    function createDeviceAndServiceNodes(graph, device, x, y, nodeMap, serviceNodes, pciCards) {
         const { interfaces, deviceIPs } = getJsonData();
         const deviceInterfaces = interfaces.filter(i => i.device_serial_number === device.serial_number);
         const deviceIPData = deviceIPs.find(d => d.device_serial_number === device.serial_number) || { ip_addresses: [] };
@@ -376,7 +438,19 @@
 
         const deviceWidth = deviceNode.size[0] + SPACING_CONFIG.DEVICE_TO_SERVICE_HORIZONTAL + 200;
         const deviceHeight = Math.max(deviceNode.size[1], serviceY - y);
-        return { deviceNode, deviceWidth, deviceHeight };
+
+        // Create PCI cards for this device
+        const devicePciCards = pciCards.filter(card => card.device_serial_number === device.serial_number);
+        devicePciCards.forEach((card, index) => {
+            const pciCardNode = new PciCardNode();
+            pciCardNode.setPciCardData(card);
+            const pciX = x + deviceNode.size[0] + 300 + (index * 200);
+            pciCardNode.pos = [pciX, y + (index * 80)];
+            graph.add(pciCardNode);
+            nodeMap.set(card.card_serial_number, pciCardNode);
+        });
+
+        return { deviceNode, deviceWidth: Math.max(deviceWidth, devicePciCards.length > 0 ? deviceWidth + 300 + (devicePciCards.length * 200) : deviceWidth), deviceHeight };
     }
 
     function createPhysicalConnections(graph, connections, interfaces, nodeMap) {
@@ -536,6 +610,95 @@
                     }
                 }
             });
+        });
+    }
+
+    function createPciConnections(graph, pciCards, pciSlots, nodeMap) {
+        pciCards.forEach(card => {
+            const deviceNode = nodeMap.get(card.device_serial_number);
+            const pciCardNode = nodeMap.get(card.card_serial_number);
+
+            if (!deviceNode || !pciCardNode) return;
+
+            // Find PCI slot for this card
+            const slot = pciSlots.find(s => s.slot_id === card.slot_id);
+            if (!slot) return;
+
+            // Find available PCI lane output on device
+            const pciOutputIndex = deviceNode.outputs.findIndex(output => 
+                output.name && output.name.toLowerCase().includes('pci')
+            );
+
+            if (pciOutputIndex === -1) {
+                // Add PCI lane output to device if it doesn't exist
+                deviceNode.addOutput(`PCI Lane (${slot.wired_lane_count}x)`, "pci_lane");
+                const newPciOutputIndex = deviceNode.outputs.length - 1;
+
+                // Connect device to PCI card
+                const link = deviceNode.connect(newPciOutputIndex, pciCardNode, 0);
+                if (link) {
+                    link.color = CONNECTION_COLORS.INTERFACE_LOGICAL;
+                }
+            } else {
+                // Connect using existing PCI output
+                const link = deviceNode.connect(pciOutputIndex, pciCardNode, 0);
+                if (link) {
+                    link.color = CONNECTION_COLORS.INTERFACE_LOGICAL;
+                }
+            }
+
+            if (card.type === 'Network') {
+                const rj45Outputs = pciCardNode.outputs.filter(output => output.name && output.name.startsWith("RJ45"));
+                
+                rj45Outputs.forEach((rj45Output, index) => {
+                    const allDeviceNodes = Array.from(nodeMap.values()).filter(node => 
+                        node && node.title && typeof node.title === 'string' && (
+                            node.title.toLowerCase().includes("switch") || 
+                            node.title.toLowerCase().includes("cisco") || 
+                            node.title.toLowerCase().includes("netgear") || 
+                            node.title.includes("SW001234") || 
+                            node.title.includes("SW002345") ||
+                            // Also check device model names for switches
+                            (node.deviceData && node.deviceData.model_name && 
+                             node.deviceData.model_name.toLowerCase().includes("switch"))
+                        )
+                    );
+
+                    if (allDeviceNodes.length > 0 && index < allDeviceNodes.length) {
+                        const switchNode = allDeviceNodes[index];
+                        
+                        // Add RJ45 interface input to switch if it doesn't exist
+                        const interfaceName = `eth${index + 1} (RJ45)`;
+                        let interfaceInputIndex = switchNode.inputs.findIndex(input => 
+                            input.name && input.name === interfaceName
+                        );
+                        
+                        if (interfaceInputIndex === -1) {
+                            switchNode.addInput(interfaceName, "interface");
+                            interfaceInputIndex = switchNode.inputs.length - 1;
+                        }
+                        
+                        const rj45OutputIndex = pciCardNode.outputs.findIndex(output => output === rj45Output);
+                        
+                        if (rj45OutputIndex !== -1 && interfaceInputIndex !== -1) {
+                            const link = pciCardNode.connect(rj45OutputIndex, switchNode, interfaceInputIndex);
+                            if (link) {
+                                let cableType = 'cat6';
+                                if (card.model_name && card.model_name.toLowerCase().includes('10gbe')) {
+                                    cableType = 'cat6';
+                                } else if (card.model_name && card.model_name.toLowerCase().includes('fiber')) {
+                                    cableType = 'fiber';
+                                }
+                                
+                                link.color = getCableColor(cableType);
+                                link.type = "copper";
+                                link.route_along_groups = true;
+                                link.wireIndex = index;
+                            }
+                        }
+                    }
+                });
+            }
         });
     }
 
@@ -709,14 +872,14 @@
     function cleanupUnselectedParticles() {
         const selectedLinkIds = new Set();
 
-        if (window.canvasInstance && window.canvasInstance.graph) {
+        if (window.canvasInstance && window.canvasInstance.graph && window.canvasInstance.graph._nodes) {
             const canvas = window.canvasInstance;
             const allLinks = [];
 
             canvas.graph._nodes.forEach(node => {
-                if (node.outputs) {
+                if (node && node.outputs) {
                     node.outputs.forEach(output => {
-                        if (output.links) {
+                        if (output && output.links) {
                             output.links.forEach(linkId => {
                                 const link = canvas.graph.links[linkId];
                                 if (link && isLinkSelected(link)) {
@@ -1055,7 +1218,9 @@
             interfaces: window.interfacesJson || [],
             connections: window.connectionsJson || [],
             deviceIPs: window.deviceIPsJson || [],
-            services: window.servicesJson || []
+            services: window.servicesJson || [],
+            pciSlots: window.pciSlotsJson || [],
+            pciCards: window.pciCardsJson || []
         };
     }
 
@@ -1076,7 +1241,7 @@
             case 'power':
                 return CONNECTION_COLORS.POWER;
             default:
-                return CONNECTION_COLORS.INTERFACE_PHYSICAL; // Default fallback
+                return CONNECTION_COLORS.INTERFACE_PHYSICAL;
         }
     }
 
