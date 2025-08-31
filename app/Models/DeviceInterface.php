@@ -13,6 +13,13 @@ class DeviceInterface extends Model
     protected $table = 'interfaces';
     protected $primaryKey = 'interface_id';
 
+    protected $fillable = [
+        'interface_type',
+        'label',
+        'device_serial_number',
+        'card_serial_number',
+    ];
+
     public function device()
     {
         return $this->belongsTo(Device::class, 'device_serial_number');

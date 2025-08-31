@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id('interface_id');
             $table->string('interface_type');
             $table->string('label');
-            $table->foreignId('device_serial_number')->constrained('devices', 'serial_number');
-            $table->foreignId('card_serial_number')->nullable()->constrained('pcie_cards', 'card_serial_number');
+            $table->foreignId('device_serial_number')->nullable()->constrained('devices', 'serial_number');
+            $table->string('card_serial_number')->nullable();
             $table->timestamps();
         });
     }

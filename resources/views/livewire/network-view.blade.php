@@ -6,6 +6,8 @@
     window.connectionsJson = @json($connections);
     window.deviceIPsJson = @json($deviceIPs);
     window.servicesJson = @json($services);
+    window.pciSlotsJson = @json($pciSlots);
+    window.pciCardsJson = @json($pciCards);
 </script>
 
 <div class="fixed inset-0 w-full h-full bg-gray-900">
