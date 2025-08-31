@@ -10,14 +10,10 @@ class PcieCard extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'card_serial_number',
-        'model_name',
-        'type',
-        'slot_id',
-        'location_id'
-    ];
 
+    protected $primaryKey = 'card_serial_number';
+    public $incrementing = false;
+    protected $keyType = 'string';
     public function pcieSlot()
     {
         return $this->belongsTo(PcieSlot::class, 'slot_id');
