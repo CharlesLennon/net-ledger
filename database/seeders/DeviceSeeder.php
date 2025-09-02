@@ -95,5 +95,79 @@ class DeviceSeeder extends Seeder
             'location_id' => $u8->location_id, // Same rack unit as PDU
             'template_id' => $template->template_id,
         ]);
+
+        // Find Rack 2 locations
+        $rack2U1 = Location::where('name', 'U1 - HP Server')->first();
+        $rack2U2 = Location::where('name', 'U2 - Juniper Switch')->first();
+        $rack2U3 = Location::where('name', 'U3 - Storage Array')->first();
+        $rack2U4 = Location::where('name', 'U4 - Backup Server')->first();
+        $rack2U5 = Location::where('name', 'U5 - Monitoring Server')->first();
+        $rack2U6 = Location::where('name', 'U6 - Load Balancer')->first();
+        $rack2U7 = Location::where('name', 'U7 - Access Switch')->first();
+        $rack2U8 = Location::where('name', 'U8 - UPS')->first();
+
+        // Rack 2 - U1 HP Server
+        Device::create([
+            'serial_number' => 'HP001234',
+            'model_name' => 'HP-ProLiant-DL380-G10',
+            'location_id' => $rack2U1->location_id,
+            'template_id' => $template->template_id,
+        ]);
+
+        // Rack 2 - U2 Juniper Switch
+        Device::create([
+            'serial_number' => 'JN001234',
+            'model_name' => 'Juniper-EX2300-24T',
+            'location_id' => $rack2U2->location_id,
+            'template_id' => $template->template_id,
+        ]);
+
+        // Rack 2 - U3 Storage Array
+        Device::create([
+            'serial_number' => 'STG001234',
+            'model_name' => 'Dell-PowerVault-MD3460',
+            'location_id' => $rack2U3->location_id,
+            'template_id' => $template->template_id,
+        ]);
+
+        // Rack 2 - U4 Backup Server
+        Device::create([
+            'serial_number' => 'BKU001234',
+            'model_name' => 'Dell-PowerEdge-R440',
+            'location_id' => $rack2U4->location_id,
+            'template_id' => $template->template_id,
+        ]);
+
+        // Rack 2 - U5 Monitoring Server
+        Device::create([
+            'serial_number' => 'MON001234',
+            'model_name' => 'HP-ProLiant-ML110-G9',
+            'location_id' => $rack2U5->location_id,
+            'template_id' => $template->template_id,
+        ]);
+
+        // Rack 2 - U6 Load Balancer
+        Device::create([
+            'serial_number' => 'LB001234',
+            'model_name' => 'F5-BIG-IP-4000s',
+            'location_id' => $rack2U6->location_id,
+            'template_id' => $template->template_id,
+        ]);
+
+        // Rack 2 - U7 Access Switch
+        Device::create([
+            'serial_number' => 'ACC001234',
+            'model_name' => 'Ubiquiti-UniFi-US-24-250W',
+            'location_id' => $rack2U7->location_id,
+            'template_id' => $template->template_id,
+        ]);
+
+        // Rack 2 - U8 UPS
+        Device::create([
+            'serial_number' => 'UPS001234',
+            'model_name' => 'APC-Smart-UPS-SRT1500XLI',
+            'location_id' => $rack2U8->location_id,
+            'template_id' => $template->template_id,
+        ]);
     }
 }

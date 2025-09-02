@@ -19,7 +19,7 @@
     <body class="bg-gray-900 text-white">
         {{ $slot }}
 
-        @stack('scripts') // Add this line
+        @stack('scripts')
         @livewireScripts
     </body>
 </html>
