@@ -2,34 +2,95 @@
 
 namespace App\Livewire;
 
-use Livewire\Component;
-use JsonSerializable; // Import the interface
-use App\Models\Location; // Re-import models
-use App\Models\Device;
-use App\Models\Service;
 use App\Models\Connection;
-use App\Models\IPAddress;
+use App\Models\Device;
 use App\Models\DeviceInterface;
+use App\Models\IPAddress;
+use App\Models\Location;
+use App\Models\NetworkView as NetworkViewModel;
+use App\Models\NodePosition;
+use App\Models\Service;
+use JsonSerializable;
+use Livewire\Attributes\On;
+use Livewire\Component;
 
-class NetworkView extends Component implements JsonSerializable // Implement the interface
+class NetworkView extends Component implements JsonSerializable
 {
+    public function mount()
+    {
+        // Component initialization
+    }
+
+    public function updateConnection($connectionId, $cableType)
+    {
+
+        $connection = Connection::find($connectionId);
+        if (! $connection) {
+            return ['success' => false, 'message' => 'Connection not found '.$connectionId];
+        }
+
+        $connection->cable_type = $cableType;
+        $connection->save();
+
+        return ['success' => true, 'message' => 'Connection updated successfully'];
+
+    }
+
+    public function deleteConnection($connectionId)
+    {
+        $connection = Connection::find($connectionId);
+        if (! $connection) {
+            return ['success' => false, 'message' => 'Connection not found'];
+        }
+        $connection->delete();
+
+        return ['success' => true, 'message' => 'Connection deleted successfully'];
+    }
+
+    // Event handlers for JavaScript dispatches
+    #[On('connection-updated')]
+    public function handleConnectionUpdated($connectionId, $cableType)
+    {
+        $result = $this->updateConnection($connectionId, $cableType);
+
+        // Dispatch response back to JavaScript
+        $this->dispatch('connection-update-response', [
+            'success' => $result['success'],
+            'message' => $result['message'],
+            'connectionId' => $connectionId,
+        ]);
+    }
+
+    #[On('connection-deleted')]
+    public function handleConnectionDeleted($connectionId)
+    {
+        $result = $this->deleteConnection($connectionId);
+
+        // Dispatch response back to JavaScript
+        $this->dispatch('connection-delete-response', [
+            'success' => $result['success'],
+            'message' => $result['message'],
+            'connectionId' => $connectionId,
+        ]);
+    }
+
     public function render()
     {
-        // Bring back data fetching logic
         $locations = Location::all()->map(function ($location) {
             return [
-                'location_id' => $location->location_id, 
+                'location_id' => $location->location_id,
                 'name' => $location->name,
-                'parent_location_id' => $location->parent_location_id
+                'parent_location_id' => $location->parent_location_id,
+                'layout_direction' => $location->layout_direction,
             ];
         })->toArray();
 
         $devices = Device::all()->map(function ($device) {
             return [
-                'serial_number' => $device->serial_number, 
-                'model_name' => $device->model_name, 
+                'serial_number' => $device->serial_number,
+                'model_name' => $device->model_name,
                 'location_id' => $device->location_id,
-                'display_name' => $device->model_name . ' (' . $device->serial_number . ')'
+                'display_name' => $device->model_name.' ('.$device->serial_number.')',
             ];
         })->toArray();
 
@@ -50,7 +111,7 @@ class NetworkView extends Component implements JsonSerializable // Implement the
                 'interface_id' => $interface->interface_id,
                 'interface_type' => $interface->interface_type,
                 'label' => $interface->label,
-                'device_serial_number' => $interface->device_serial_number
+                'device_serial_number' => $interface->device_serial_number,
             ];
         })->toArray();
 
@@ -59,7 +120,7 @@ class NetworkView extends Component implements JsonSerializable // Implement the
                 'slot_id' => $slot->slot_id,
                 'device_serial_number' => $slot->device_serial_number,
                 'physical_lane_count' => $slot->physical_lane_count,
-                'wired_lane_count' => $slot->wired_lane_count
+                'wired_lane_count' => $slot->wired_lane_count,
             ];
         })->toArray();
 
@@ -70,11 +131,11 @@ class NetworkView extends Component implements JsonSerializable // Implement the
                 'type' => $card->type,
                 'slot_id' => $card->slot_id,
                 'device_serial_number' => $card->pcieSlot->device_serial_number ?? null,
-                'display_name' => $card->model_name . ' (' . $card->card_serial_number . ')'
+                'display_name' => $card->model_name.' ('.$card->card_serial_number.')',
             ];
         })->toArray();
 
-        $deviceIPs = \App\Models\Device::with('ipAddresses')->get()->map(function ($device) {
+        $deviceIPs = \App\Models\Device::with('ipAddresses.services')->get()->map(function ($device) {
             return [
                 'device_serial_number' => $device->serial_number,
                 'ip_addresses' => $device->ipAddresses->map(function ($ip) {
@@ -85,11 +146,11 @@ class NetworkView extends Component implements JsonSerializable // Implement the
                             return [
                                 'service_id' => $service->service_id,
                                 'name' => $service->name,
-                                'port_number' => $service->pivot->port_number
+                                'port_number' => $service->pivot->port_number,
                             ];
-                        })->toArray()
+                        })->toArray(),
                     ];
-                })->toArray()
+                })->toArray(),
             ];
         })->toArray();
 
@@ -103,12 +164,13 @@ class NetworkView extends Component implements JsonSerializable // Implement the
             'deviceIPs' => $deviceIPs,
             'pciSlots' => $pciSlots,
             'pciCards' => $pciCards,
+            'availableViews' => [], // Temporarily disabled
+            'selectedViewId' => null, // Temporarily disabled
         ]);
     }
 
-    // Implement the jsonSerialize method
     public function jsonSerialize(): array
     {
-        return []; // Return an empty array for serialization
+        return [];
     }
 }

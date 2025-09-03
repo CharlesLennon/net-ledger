@@ -2,15 +2,20 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
 class Connection extends Model
 {
     use HasFactory;
 
     protected $primaryKey = 'connection_id';
+
+    protected $fillable = [
+        'source_interface_id',
+        'destination_interface_id',
+        'cable_type',
+    ];
 
     public function sourceInterface()
     {

@@ -138,11 +138,14 @@
       }
       const link = sourceDevice.connect(sourceSlot, destDevice, destSlot);
       if (link) {
+<<<<<<< HEAD
         // Set routing properties on the link object
         const isPowerConnection = sourceInterface.interface_type === 'Power';
         link.isPowerConnection = isPowerConnection;
         link.route_along_groups = isPowerConnection; // Enable group routing for power connections
         
+=======
+>>>>>>> cedd1257fe99b71cda466de2637cdaa4804927b6
         const cableColor = window.getCableColor
           ? window.getCableColor(connection.cable_type)
           : null;
@@ -335,6 +338,7 @@
         return CONNECTION_COLORS.INTERFACE_PHYSICAL;
     }
   }
+<<<<<<< HEAD
   
   // Group-aware routing functions
   function calculateOrthogonalPath(startPos, endPos, startDir, endDir, wireIndex = 0, link = null) {
@@ -475,9 +479,14 @@
     );
   }
 
+=======
+>>>>>>> cedd1257fe99b71cda466de2637cdaa4804927b6
   window.createPhysicalConnections = createPhysicalConnections;
   window.createLogicalServiceConnections = createLogicalServiceConnections;
   window.createPciConnections = createPciConnections;
   window.getCableColor = getCableColor;
+<<<<<<< HEAD
   window.calculateOrthogonalPath = calculateOrthogonalPath;
+=======
+>>>>>>> cedd1257fe99b71cda466de2637cdaa4804927b6
 })();
