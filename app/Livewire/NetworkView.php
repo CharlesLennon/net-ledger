@@ -11,36 +11,15 @@ use App\Models\NetworkView as NetworkViewModel;
 use App\Models\NodePosition;
 use App\Models\Service;
 use JsonSerializable;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 class NetworkView extends Component implements JsonSerializable
 {
-    // View-related properties - COMMENTED OUT
-    /*
-    public $selectedViewId = null;
-    public $newViewName = '';
-    public $availableViews = [];
-    */
-
-    // View-related methods - COMMENTED OUT
-    /*
     public function mount()
     {
-        $this->loadAvailableViews();
-        $this->selectedViewId = $this->getDefaultViewId();
+        // Component initialization
     }
-
-    public function loadAvailableViews()
-    {
-        $this->availableViews = NetworkViewModel::orderBy('name')->get()->toArray();
-    }
-
-    public function getDefaultViewId()
-    {
-        $defaultView = NetworkViewModel::default()->first();
-        return $defaultView ? $defaultView->view_id : null;
-    }
-    */
 
     public function saveNodePosition($nodeType, $nodeId, $x, $y)
     {
@@ -65,6 +44,59 @@ class NetworkView extends Component implements JsonSerializable
         }
     }
 
+    public function updateConnection($connectionId, $cableType)
+    {
+
+        $connection = Connection::find($connectionId);
+        if (! $connection) {
+            return ['success' => false, 'message' => 'Connection not found '.$connectionId];
+        }
+
+        $connection->cable_type = $cableType;
+        $connection->save();
+
+        return ['success' => true, 'message' => 'Connection updated successfully'];
+
+    }
+
+    public function deleteConnection($connectionId)
+    {
+        $connection = Connection::find($connectionId);
+        if (! $connection) {
+            return ['success' => false, 'message' => 'Connection not found'];
+        }
+        $connection->delete();
+
+        return ['success' => true, 'message' => 'Connection deleted successfully'];
+    }
+
+    // Event handlers for JavaScript dispatches
+    #[On('connection-updated')]
+    public function handleConnectionUpdated($connectionId, $cableType)
+    {
+        $result = $this->updateConnection($connectionId, $cableType);
+
+        // Dispatch response back to JavaScript
+        $this->dispatch('connection-update-response', [
+            'success' => $result['success'],
+            'message' => $result['message'],
+            'connectionId' => $connectionId,
+        ]);
+    }
+
+    #[On('connection-deleted')]
+    public function handleConnectionDeleted($connectionId)
+    {
+        $result = $this->deleteConnection($connectionId);
+
+        // Dispatch response back to JavaScript
+        $this->dispatch('connection-delete-response', [
+            'success' => $result['success'],
+            'message' => $result['message'],
+            'connectionId' => $connectionId,
+        ]);
+    }
+
     public function createNewView($name, $description = null)
     {
         if (empty($name)) {
@@ -86,90 +118,6 @@ class NetworkView extends Component implements JsonSerializable
             return ['success' => false, 'message' => 'Failed to create view: '.$e->getMessage()];
         }
     }
-
-    // View switching methods - COMMENTED OUT
-    /*
-    public function updatedSelectedViewId($value)
-    {
-        // Only switch if a valid view ID is selected
-        if (!empty($value)) {
-            $this->switchView($value);
-        }
-    }
-
-    public function switchView($viewId)
-    {
-        $this->selectedViewId = $viewId;
-
-        // Get saved positions for the new view
-        $savedPositions = new \stdClass(); // Use object instead of array for empty case
-        if ($this->selectedViewId) {
-            $positions = NodePosition::where('view_id', $this->selectedViewId)->get();
-            $savedPositionsArray = [];
-            foreach ($positions as $position) {
-                $savedPositionsArray[$position->node_type . '_' . $position->node_id] = [
-                    'x' => (float) $position->x_position,
-                    'y' => (float) $position->y_position
-                ];
-            }
-            $savedPositions = (object) $savedPositionsArray;
-        }
-
-        $this->dispatch('viewSwitched', $viewId, $savedPositions);
-    }
-
-    public function createNewView($name, $description = null)
-    {
-        if (empty($name)) {
-            return ['success' => false, 'message' => 'View name is required'];
-        }
-
-        try {
-            $view = NetworkViewModel::create([
-                'name' => $name,
-                'description' => $description,
-                'is_default' => false,
-            ]);
-
-            $this->loadAvailableViews();
-            $this->selectedViewId = $view->view_id;
-
-            return ['success' => true, 'message' => 'View created successfully', 'view_id' => $view->view_id];
-        } catch (\Exception $e) {
-            return ['success' => false, 'message' => 'Failed to create view: ' . $e->getMessage()];
-        }
-    }
-
-    /*
-    public function deleteView($viewId)
-    {
-        if (!$viewId) {
-            return ['success' => false, 'message' => 'Invalid view ID'];
-        }
-
-        try {
-            $view = NetworkViewModel::find($viewId);
-            if (!$view) {
-                return ['success' => false, 'message' => 'View not found'];
-            }
-
-            if ($view->is_default) {
-                return ['success' => false, 'message' => 'Cannot delete default view'];
-            }
-
-            $view->delete();
-            $this->loadAvailableViews();
-
-            if ($this->selectedViewId === $viewId) {
-                $this->selectedViewId = $this->getDefaultViewId();
-            }
-
-            return ['success' => true, 'message' => 'View deleted successfully'];
-        } catch (\Exception $e) {
-            return ['success' => false, 'message' => 'Failed to delete view: ' . $e->getMessage()];
-        }
-    }
-    */
 
     public function render()
     {
@@ -251,17 +199,6 @@ class NetworkView extends Component implements JsonSerializable
             ];
         })->toArray();
 
-        // Get saved positions (views temporarily disabled, using default view)
-        $savedPositions = [];
-        $defaultViewId = 1; // Use a default view ID for now
-        $positions = NodePosition::where('view_id', $defaultViewId)->get();
-        foreach ($positions as $position) {
-            $savedPositions[$position->node_type.'_'.$position->node_id] = [
-                'x' => (float) $position->x_position,
-                'y' => (float) $position->y_position,
-            ];
-        }
-
         return view('livewire.network-view', [
             'locations' => $locations,
             'devices' => $devices,
@@ -272,7 +209,6 @@ class NetworkView extends Component implements JsonSerializable
             'deviceIPs' => $deviceIPs,
             'pciSlots' => $pciSlots,
             'pciCards' => $pciCards,
-            'savedPositions' => $savedPositions,
             'availableViews' => [], // Temporarily disabled
             'selectedViewId' => null, // Temporarily disabled
         ]);
