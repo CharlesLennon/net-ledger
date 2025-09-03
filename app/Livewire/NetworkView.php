@@ -21,29 +21,6 @@ class NetworkView extends Component implements JsonSerializable
         // Component initialization
     }
 
-    public function saveNodePosition($nodeType, $nodeId, $x, $y)
-    {
-        $defaultViewId = 1; // Use default view ID since views are temporarily disabled
-
-        try {
-            NodePosition::updateOrCreate(
-                [
-                    'view_id' => $defaultViewId,
-                    'node_type' => $nodeType,
-                    'node_id' => $nodeId,
-                ],
-                [
-                    'x_position' => $x,
-                    'y_position' => $y,
-                ]
-            );
-
-            return ['success' => true, 'message' => 'Position saved'];
-        } catch (\Exception $e) {
-            return ['success' => false, 'message' => 'Failed to save position: '.$e->getMessage()];
-        }
-    }
-
     public function updateConnection($connectionId, $cableType)
     {
 
@@ -95,28 +72,6 @@ class NetworkView extends Component implements JsonSerializable
             'message' => $result['message'],
             'connectionId' => $connectionId,
         ]);
-    }
-
-    public function createNewView($name, $description = null)
-    {
-        if (empty($name)) {
-            return ['success' => false, 'message' => 'View name is required'];
-        }
-
-        try {
-            $view = NetworkViewModel::create([
-                'name' => $name,
-                'description' => $description,
-                'is_default' => false,
-            ]);
-
-            $this->loadAvailableViews();
-            $this->selectedViewId = $view->view_id;
-
-            return ['success' => true, 'message' => 'View created successfully', 'view_id' => $view->view_id];
-        } catch (\Exception $e) {
-            return ['success' => false, 'message' => 'Failed to create view: '.$e->getMessage()];
-        }
     }
 
     public function render()
