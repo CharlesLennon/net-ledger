@@ -90,7 +90,7 @@
                     <div style="color: #8b5cf6; font-weight: bold; font-size: 13px; margin-bottom: 6px;">🏢 Group Routing Settings</div>
                 </div>
                 <label style="color: #a0aec0;" title="Gap between groups for horizontal routing">Group Horizontal Gap:</label>
-                <input type="number" id="group-horizontal-gap" value="${window.WIRE_ROUTING_CONFIG ? window.WIRE_ROUTING_CONFIG.GROUP_HORIZONTAL_GAP : 50}" min="20" max="200" step="10" style="width: 100%; padding: 4px; border-radius: 4px; border: 1px solid #4a5568; background: #2d3748; color: #fff;">
+                <input type="number" id="group-horizontal-gap" value="${window.WIRE_ROUTING_CONFIG ? window.WIRE_ROUTING_CONFIG.GROUP_HORIZONTAL_GAP : 300}" min="20" max="500" step="10" style="width: 100%; padding: 4px; border-radius: 4px; border: 1px solid #4a5568; background: #2d3748; color: #fff;">
                 <label style="color: #a0aec0;" title="Spacing between multiple wires in group routing">Group Wire Offset:</label>
                 <input type="number" id="group-wire-offset" value="${window.WIRE_ROUTING_CONFIG ? window.WIRE_ROUTING_CONFIG.GROUP_WIRE_OFFSET : 20}" min="10" max="50" step="5" style="width: 100%; padding: 4px; border-radius: 4px; border: 1px solid #4a5568; background: #2d3748; color: #fff;">
                 <!-- Right Side Settings Section -->

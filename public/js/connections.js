@@ -335,7 +335,6 @@
         return CONNECTION_COLORS.INTERFACE_PHYSICAL;
     }
   }
-<<<<<<< HEAD
   
   // Group-aware routing functions
   function calculateOrthogonalPath(startPos, endPos, startDir, endDir, wireIndex = 0, link = null) {
@@ -361,7 +360,7 @@
 
     // Get routing config from global scope
     const config = window.WIRE_ROUTING_CONFIG || {
-      GROUP_HORIZONTAL_GAP: 150,
+      GROUP_HORIZONTAL_GAP: 300,
       GROUP_WIRE_OFFSET: 20
     };
 
@@ -476,14 +475,9 @@
     );
   }
 
-=======
->>>>>>> cedd1257fe99b71cda466de2637cdaa4804927b6
   window.createPhysicalConnections = createPhysicalConnections;
   window.createLogicalServiceConnections = createLogicalServiceConnections;
   window.createPciConnections = createPciConnections;
   window.getCableColor = getCableColor;
-<<<<<<< HEAD
   window.calculateOrthogonalPath = calculateOrthogonalPath;
-=======
->>>>>>> cedd1257fe99b71cda466de2637cdaa4804927b6
 })();

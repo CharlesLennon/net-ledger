@@ -86,7 +86,7 @@
   
   function applyWireConfig() {
     // Update the global config from UI inputs
-    WIRE_ROUTING_CONFIG.GROUP_HORIZONTAL_GAP = parseInt(document.getElementById('group-horizontal-gap').value) || 50;
+    WIRE_ROUTING_CONFIG.GROUP_HORIZONTAL_GAP = parseInt(document.getElementById('group-horizontal-gap').value) || 300;
     WIRE_ROUTING_CONFIG.GROUP_WIRE_OFFSET = parseInt(document.getElementById('group-wire-offset').value) || 20;
     WIRE_ROUTING_CONFIG.NON_POWER_OFFSET_RIGHT = parseInt(document.getElementById('non-power-offset-right').value) || 600;
     WIRE_ROUTING_CONFIG.HORIZONTAL_OFFSET_LEFT = parseInt(document.getElementById('horizontal-offset-left').value) || 200;
@@ -217,7 +217,7 @@
       RIGHT_CHANNEL_X: 1250,
       CHANNEL_SPACING: 30,
       CHANNEL_WIDTH: 60,
-      GROUP_HORIZONTAL_GAP: 50,
+      GROUP_HORIZONTAL_GAP: 300,
       GROUP_WIRE_OFFSET: 20,
     };
     WIRE_ROUTING_CONFIG = { ...WIRE_ROUTING_CONFIG, ...defaultConfig };
