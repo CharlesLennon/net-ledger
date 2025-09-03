@@ -8,6 +8,12 @@ class Location extends Model
 {
     protected $primaryKey = 'location_id';
 
+    protected $fillable = [
+        'name',
+        'parent_location_id',
+        'layout_direction',
+    ];
+
     public function parent()
     {
         return $this->belongsTo(Location::class, 'parent_location_id');

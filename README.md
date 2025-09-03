@@ -3,6 +3,7 @@
 A comprehensive network inventory and asset management system, serving as a single source of truth for all network devices, services, and connections.
 <img width="1696" height="669" alt="image" src="https://github.com/user-attachments/assets/62c06db1-4b4b-49cc-8080-e74b9b437181" />
 
+![alt text](image.png)
 
 ## ✨ Features
 
