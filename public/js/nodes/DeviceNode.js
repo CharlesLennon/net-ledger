@@ -74,11 +74,9 @@ class DeviceNode extends window.BaseNetworkNode {
     node.title = newName;
     node.deviceInterfaces = newInterfaces || [];
 
-    // Clear existing outputs and inputs (except power input)
     node.outputs = [];
     node.inputs = node.inputs.filter(input => input.name === 'power');
 
-    // Recalculate size and interfaces
     node.size[0] = node.calculateTitleWidth(200, 40);
     node.size[1] = 60;
 

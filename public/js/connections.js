@@ -86,6 +86,7 @@
               : null;
             link.color =
               cableColor || (window.CONNECTION_COLORS ? window.CONNECTION_COLORS.POWER : '#ef4444');
+            link.cable_type = connection.cable_type || 'power';
             if (typeof LiteGraph !== 'undefined') {
               link.start_dir = LiteGraph.LEFT;
               link.end_dir = LiteGraph.LEFT;
@@ -93,7 +94,7 @@
               link.start_dir = 3;
               link.end_dir = 3;
             }
-            link.isPowerConnection = true;
+            link.isPowerConnection = isPowerConnection;
             link.route_along_groups = true;
             link.wireIndex = powerIndex !== null ? powerIndex : currentIndex;
             if (powerIndex !== null) {
@@ -138,11 +139,8 @@
       }
       const link = sourceDevice.connect(sourceSlot, destDevice, destSlot);
       if (link) {
-        // Set routing properties on the link object
         const isPowerConnection = sourceInterface.interface_type === 'Power';
-        link.isPowerConnection = isPowerConnection;
-        link.route_along_groups = isPowerConnection; // Enable group routing for power connections
-        
+
         const cableColor = window.getCableColor
           ? window.getCableColor(connection.cable_type)
           : null;
@@ -155,23 +153,22 @@
               ? window.CONNECTION_COLORS.INTERFACE_PHYSICAL
               : '#10b981';
         link.color = cableColor || defaultColor;
+        link.cable_type = connection.cable_type || (isPowerConnection ? 'power' : 'cat6');
         if (typeof LiteGraph !== 'undefined') {
           if (sourceInterface.interface_type === 'Power') {
             link.start_dir = LiteGraph.LEFT;
             link.end_dir = LiteGraph.LEFT;
-            link.isPowerConnection = true;
           } else {
             link.start_dir = LiteGraph.RIGHT;
-            link.end_dir = LiteGraph.LEFT;
+            link.end_dir = LiteGraph.RIGHT;
           }
         } else {
           if (sourceInterface.interface_type === 'Power') {
             link.start_dir = 3;
             link.end_dir = 3;
-            link.isPowerConnection = true;
           } else {
             link.start_dir = 4;
-            link.end_dir = 3;
+            link.end_dir = 4;
           }
         }
         link.route_along_groups = true;
@@ -179,6 +176,7 @@
         if (powerIndex !== null) {
           link.powerChannelIndex = powerIndex;
         }
+        link.isPowerConnection = isPowerConnection;
         if (!link.isPowerConnection) {
           link.networkChannelIndex = powerIndex !== null ? powerIndex : currentIndex;
         }
@@ -335,44 +333,36 @@
         return CONNECTION_COLORS.INTERFACE_PHYSICAL;
     }
   }
-  
-  // Group-aware routing functions
-  function calculateOrthogonalPath(startPos, endPos, startDir, endDir, wireIndex = 0, link = null) {
+
+  function calculateWireRoute(startPos, endPos, startDir, endDir, wireIndex = 0, link = null) {
+    // think about making wireindex global
+    switch (window.WIRE_ROUTING_CONFIG.MODE) {
+      case 'orthogonal':
+        return orthogonalRouting(startPos, endPos, startDir, endDir, wireIndex, link);
+      case 'bus':
+        break;
+      default:
+        return orthogonalRouting(startPos, endPos, startDir, endDir, wireIndex, link);
+    }
+  }
+
+  function orthogonalRouting(startPos, endPos, startDir, endDir, wireIndex = 0, link = null) {
+    
     const points = [];
     const startX = startPos[0];
     const startY = startPos[1];
     const endX = endPos[0];
     const endY = endPos[1];
-    
-    points.push({ x: startX, y: startY });
 
-    // Check if this connection should use group-aware routing
-    const useGroupRouting = link && link.route_along_groups === true;
-    
-    if (!useGroupRouting) {
-      // Default simple routing for service connections and non-group connections
-      const routingX = startX < endX ? endX - 100 : endX + 100;
-      points.push({ x: routingX, y: startY });
-      points.push({ x: routingX, y: endY });
-      points.push({ x: endX, y: endY });
-      return points;
-    }
+    const config = window.WIRE_ROUTING_CONFIG;
 
-    // Get routing config from global scope
-    const config = window.WIRE_ROUTING_CONFIG || {
-      GROUP_HORIZONTAL_GAP: 300,
-      GROUP_WIRE_OFFSET: 20
-    };
-
-    // Find the target group - prefer the smallest/most specific group
     const allGroups = window.canvasInstance?.graph?._groups || [];
     let destGroup = null;
     let smallestGroupSize = Infinity;
-    
-    // Try to find destination group by position - prefer smallest group
+
     for (const group of allGroups) {
       if (isPositionInGroup(endPos, group)) {
-        const groupSize = (group.size ? group.size[0] * group.size[1] : 40000);
+        const groupSize = group.size ? group.size[0] * group.size[1] : 40000;
         if (groupSize < smallestGroupSize) {
           destGroup = group;
           smallestGroupSize = groupSize;
@@ -380,12 +370,11 @@
       }
     }
 
-    // If no group found, try to find by nearby position with tolerance - prefer smallest group
     if (!destGroup) {
       smallestGroupSize = Infinity;
       for (const group of allGroups) {
         if (isPositionNearGroup(endPos, group, 200)) {
-          const groupSize = (group.size ? group.size[0] * group.size[1] : 40000);
+          const groupSize = group.size ? group.size[0] * group.size[1] : 40000;
           if (groupSize < smallestGroupSize) {
             destGroup = group;
             smallestGroupSize = groupSize;
@@ -394,48 +383,130 @@
       }
     }
 
+    var destHorizontalParentGroup = null;
+    var startHorizontalParentGroup = null;
+
     if (destGroup) {
-      // Group-aware routing: horizontal TOWARD target first, then vertical
-      const groupX = destGroup.pos[0];
-      const groupWidth = destGroup.size ? destGroup.size[0] : 200;
-      const isPowerConnection = link && link.isPowerConnection;
-      
-      // FIXED: Route toward the target group horizontally first
-      let routingX;
-      
-      // Determine if we're routing from left to right or right to left
-      const isRoutingRightward = startX < endX;
-      
-      if (isRoutingRightward) {
-        // Routing toward the group from the left - go to the appropriate edge of target group
-        if (isPowerConnection) {
-          routingX = groupX - config.GROUP_HORIZONTAL_GAP - (wireIndex * config.GROUP_WIRE_OFFSET);
-        } else {
-          routingX = groupX + groupWidth + config.GROUP_HORIZONTAL_GAP + (wireIndex * config.GROUP_WIRE_OFFSET);
+      let currentGroup = destGroup;
+      while (currentGroup) {
+        if (currentGroup.layout_direction === 'horizontal') {
+          destHorizontalParentGroup = currentGroup;
+          break;
         }
-      } else {
-        // Routing toward the group from the right - go to the appropriate edge of target group  
-        if (isPowerConnection) {
-          routingX = groupX - config.GROUP_HORIZONTAL_GAP - (wireIndex * config.GROUP_WIRE_OFFSET);
+        if (currentGroup.parent_id) {
+          const parentGroup = allGroups.find(g => g.id === currentGroup.parent_id);
+          currentGroup = parentGroup || null;
         } else {
-          routingX = groupX - config.GROUP_HORIZONTAL_GAP - (wireIndex * config.GROUP_WIRE_OFFSET);
+          currentGroup = null;
         }
       }
-      
-      // Route horizontally first
-      points.push({ x: routingX, y: startY });
-      
-      // Then route vertically
-      points.push({ x: routingX, y: endY });
-    } else {
-      // Fallback: still use horizontal-first routing
-      const routingX = startX < endX ? endX - 100 : endX + 100;
-      points.push({ x: routingX, y: startY });
-      points.push({ x: routingX, y: endY });
     }
 
-    // Final connection to destination
+    let startGroup = null;
+    let smallestStartGroupSize = Infinity;
+    for (const group of allGroups) {
+      if (isPositionInGroup(startPos, group)) {
+        const groupSize = group.size ? group.size[0] * group.size[1] : 40000;
+        if (groupSize < smallestStartGroupSize) {
+          startGroup = group;
+          smallestStartGroupSize = groupSize;
+        }
+      }
+    }
+
+    if (!startGroup) {
+      smallestStartGroupSize = Infinity;
+      for (const group of allGroups) {
+        if (isPositionNearGroup(startPos, group, 200)) {
+          const groupSize = group.size ? group.size[0] * group.size[1] : 40000;
+          if (groupSize < smallestStartGroupSize) {
+            startGroup = group;
+            smallestStartGroupSize = groupSize;
+          }
+        }
+      }
+    }
+
+    if (startGroup) {
+      let currentGroup = startGroup;
+      while (currentGroup) {
+        if (currentGroup.layout_direction === 'horizontal') {
+          startHorizontalParentGroup = currentGroup;
+          break;
+        }
+        if (currentGroup.parent_id) {
+          const parentGroup = allGroups.find(g => g.id === currentGroup.parent_id);
+          currentGroup = parentGroup || null;
+        } else {
+          currentGroup = null;
+        }
+      }
+    }
+
+    let destHorizontalParentGroupChild = null;
+    let destHorizontalParentGroupChildren = [];
+    if (destHorizontalParentGroup) {
+      destHorizontalParentGroupChildren = allGroups.filter(
+        g => g.parent_id === destHorizontalParentGroup.id
+      );
+      for (const childGroup of destHorizontalParentGroupChildren) {
+        if (isPositionInGroup(endPos, childGroup)) {
+          destHorizontalParentGroupChild = childGroup;
+          break;
+        }
+      }
+    }
+
+    let startHorizontalParentGroupChild = null;
+    let startHorizontalParentGroupChildren = [];
+    if (startHorizontalParentGroup) {
+      startHorizontalParentGroupChildren = allGroups.filter(
+        g => g.parent_id === startHorizontalParentGroup.id
+      );
+      for (const childGroup of startHorizontalParentGroupChildren) {
+        if (isPositionInGroup(startPos, childGroup)) {
+          startHorizontalParentGroupChild = childGroup;
+          break;
+        }
+      }
+    }
+
+    var sameHorizontalGroup =
+      destHorizontalParentGroupChild &&
+      startHorizontalParentGroupChild &&
+      destHorizontalParentGroupChild._pos === startHorizontalParentGroupChild._pos;
+
+    var routeToLeftSide = link && link.cable_type === 'Power';
+
+    let getToX = null;
+    if (sameHorizontalGroup) {
+      if (routeToLeftSide) {
+        getToX = (startX - window.WIRE_ROUTING_CONFIG.WIRE_OFFSET_INCREMENT) + (wireIndex * config.GROUP_WIRE_OFFSET);
+      } else {
+        getToX = (startX + window.WIRE_ROUTING_CONFIG.WIRE_OFFSET_INCREMENT) + (wireIndex * config.GROUP_WIRE_OFFSET);
+      }
+    } else {
+      if (routeToLeftSide) {
+        getToX = destHorizontalParentGroupChild
+          ? destHorizontalParentGroupChild.pos[0] -
+            wireIndex * config.GROUP_WIRE_OFFSET
+          : endX - 100;
+      } else {
+        getToX = destHorizontalParentGroupChild
+          ? destHorizontalParentGroupChild.pos[0] +
+            (destHorizontalParentGroupChild.size ? destHorizontalParentGroupChild.size[0] : 200) +
+            wireIndex * config.GROUP_WIRE_OFFSET
+          : endX + 100;
+      }
+    }
+    points.push({ x: startX, y: startY });
+    points.push({ x: getToX, y: startY });
+    points.push({ x: getToX, y: startY });
+    points.push({ x: getToX, y: endY });
     points.push({ x: endX, y: endY });
+
+    link.points = points;
+
     return points;
   }
 
@@ -443,12 +514,12 @@
     if (!group || !group.pos || !group.size) {
       return false;
     }
-    
+
     const groupX = group.pos[0];
     const groupY = group.pos[1];
     const groupWidth = group.size[0] || 200;
     const groupHeight = group.size[1] || 100;
-    
+
     return (
       pos[0] >= groupX &&
       pos[0] <= groupX + groupWidth &&
@@ -461,12 +532,12 @@
     if (!group || !group.pos || !group.size) {
       return false;
     }
-    
+
     const groupX = group.pos[0];
     const groupY = group.pos[1];
     const groupWidth = group.size[0] || 200;
     const groupHeight = group.size[1] || 100;
-    
+
     return (
       pos[0] >= groupX - tolerance &&
       pos[0] <= groupX + groupWidth + tolerance &&
@@ -479,5 +550,5 @@
   window.createLogicalServiceConnections = createLogicalServiceConnections;
   window.createPciConnections = createPciConnections;
   window.getCableColor = getCableColor;
-  window.calculateOrthogonalPath = calculateOrthogonalPath;
+  window.calculateWireRoute = calculateWireRoute;
 })();

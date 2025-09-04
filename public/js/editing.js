@@ -262,7 +262,8 @@
     if (existingPanel) {
       existingPanel.remove();
     }
-    const currentCableType = link.cable_type || 'cat6';
+    console.log("editing wire", link);
+    const currentCableType = (link.cable_type || 'cat6').toLowerCase();
     const panel = document.createElement('div');
     panel.id = 'wire-edit-panel';
     panel.style.cssText = `
@@ -285,7 +286,7 @@
         `;
     panel.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <h3 style="margin: 0; color: #e4870eff; font-size: 14px;">Edit Wire Properties</h3>
+                <h3 style="margin: 0; color: #e4870eff; font-size: 14px;">Edit Wire Properties ${currentCableType.toUpperCase()}</h3>
                 <button id="close-wire-edit-panel-btn" style="
                     background: none;
                     border: none;

@@ -56,8 +56,19 @@
         }
     </script>
 
+    <script src="{{ asset('js/config/WireConfig.js') }}?v={{ time() . rand(1000, 9999) }}"></script>
+    <script src="{{ asset('js/config/index.js') }}?v={{ time() . rand(1000, 9999) }}"></script>
+    
+    <!-- Load refactored classes in dependency order -->
+    <script src="{{ asset('js/classes/NetworkUtils.js') }}?v={{ time() . rand(1000, 9999) }}"></script>
+    <script src="{{ asset('js/classes/CanvasManager.js') }}?v={{ time() . rand(1000, 9999) }}"></script>
+    <script src="{{ asset('js/classes/KeyboardController.js') }}?v={{ time() . rand(1000, 9999) }}"></script>
+    <script src="{{ asset('js/classes/ParticleSystem.js') }}?v={{ time() . rand(1000, 9999) }}"></script>
+    <script src="{{ asset('js/classes/WireRenderer.js') }}?v={{ time() . rand(1000, 9999) }}"></script>
+    <script src="{{ asset('js/classes/NetworkManager.js') }}?v={{ time() . rand(1000, 9999) }}"></script>
+    
     <script src="{{ asset('js/nodes/index.js') }}?v={{ time() . rand(1000, 9999) }}"></script>
-    <script src="{{ asset('js/panels.js') }}?v={{ time() . rand(1000, 9999) }}"></script>
+    <script src="{{ asset('js/panels/index.js') }}?v={{ time() . rand(1000, 9999) }}"></script>
     <script src="{{ asset('js/editing.js') }}?v={{ time() . rand(1000, 9999) }}"></script>
     <script src="{{ asset('js/connections.js') }}?v={{ time() . rand(1000, 9999) }}"></script>
     <script src="{{ asset('js/network-visualization.js') }}?v={{ time() . rand(1000, 9999) }}"></script>
