@@ -129,13 +129,16 @@ class DevicesAsNodes {
         const originalRenderLink = canvas.renderLink;
         canvas.renderLink = function(ctx, a, b, link, skip_border, flow, color, start_dir, end_dir, num_sublines) {
             let wireColor = color;
-            if (link && link.type === 'power') { wireColor = "#F77"; }
-            else if (link && link.type === 'rj45') { wireColor = "#4A90E2"; }
-            else if (link && link.type === 'rj11') { wireColor = "#50E3C2"; }
-            else if (link && link.type === 'sata') { wireColor = "#9013FE"; }
-            else if (link && link.type === 'usb') { wireColor = "#B8E986"; }
-            else if (link && link.type === 'display') { wireColor = "#F5A623"; }
-            else if (link && link.type === 'interface') { wireColor = "#7ED321"; }
+            if (link && link.cable_type === 'power') { wireColor = "#F77"; }
+            else if (link && link.cable_type === 'cat6') { wireColor = "#4A90E2"; }
+            else if (link && link.cable_type === 'cat5e') { wireColor = "#50E3C2"; }
+            else if (link && link.cable_type === 'fiber') { wireColor = "#9013FE"; }
+            else if (link && link.cable_type === 'copper') { wireColor = "#B8E986"; }
+            else if (link && link.cable_type === 'coaxial') { wireColor = "#F5A623"; }
+            else if (link && link.cable_type === 'usb') { wireColor = "#B8E986"; }
+            else if (link && link.cable_type === 'sata') { wireColor = "#9013FE"; }
+            else if (link && link.cable_type === 'display') { wireColor = "#F5A623"; }
+            else if (link && link.cable_type === 'interface') { wireColor = "#7ED321"; }
             return originalRenderLink.call(this, ctx, a, b, link, skip_border, flow, wireColor, start_dir, end_dir, num_sublines);
         };
 
@@ -213,6 +216,7 @@ class DevicesAsNodes {
                         const link = sourceDevice.connect(sourceSlotIndex, destinationDevice, destinationSlotIndex);
                         if (link) {
                             link.type = source_interface.interface_type.toLowerCase();
+                            link.cable_type = conn.cable_type.toLowerCase();
                         } else {
                             console.warn('Failed to create connection');
                         }
