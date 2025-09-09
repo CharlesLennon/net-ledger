@@ -16,6 +16,7 @@ A comprehensive network inventory and asset management system, serving as a sing
     - Device-to-service logical connections in blue
     - Physical device-to-device connections with cable-specific colors
     - Real-time interactive graph using litegraph.js
+*   **Modular Feature System**: Extensible architecture with lifecycle hooks for custom features
 *   **Automated Discovery**: Automatically scan the network using protocols like SNMP, LLDP, and ARP to discover and onboard new assets
 *   **Peer-to-Peer Data Sharing**: Enable multiple instances of Net Ledger to discover each other and synchronize data
 
@@ -33,17 +34,50 @@ Net Ledger is built on a relational database schema designed for flexibility and
 - **IP Addresses**: IP address management and allocation
 - **History**: Complete audit trail of all asset changes
 
-### Network Visualization
+### Network Visualization Architecture
 
-The frontend uses `litegraph.js` to render an interactive node-based network topology:
+The frontend uses a **modular lifecycle-based system** built on `litegraph.js`:
 
-*   **Groups**: Represent physical `Locations` in a hierarchical structure
-*   **Device Nodes**: Show network equipment with interface details
-*   **Service Nodes**: Display services bound to specific IP addresses and ports
-*   **Color-Coded Connections**:
-    - **Physical Connections**: Colored by cable type from database
-    - **Logical Connections**: Blue wires connecting devices to their services
-    - **Power Connections**: Red wires for power interfaces
+*   **NetworkManager**: Core orchestrator with clear lifecycle stages:
+    1. **onMount**: Initialize system and features
+    2. **onPreRender**: Prepare data and build hierarchies
+    3. **onCreateGroups**: Create location-based visual groups
+    4. **onCreateNodes**: Create device and service nodes
+    5. **onCreateConnections**: Create physical and logical connections
+    6. **onRender**: Advanced rendering features (navigation dots, etc.)
+    7. **onPostRender**: Cleanup and finalization
+
+*   **Feature System**: Pluggable modules that hook into lifecycle stages:
+    - **DotMapper**: Intelligent navigation dot placement for wire routing
+    - **WireRenderer**: Advanced connection rendering with multiple routing algorithms
+    - **ParticleSystem**: Visual effects and animations
+    - **Custom Features**: Easy to create using lifecycle hooks
+
+*   **Visual Components**:
+    - **Groups**: Represent physical `Locations` in a hierarchical structure
+    - **Device Nodes**: Show network equipment with interface details
+    - **Service Nodes**: Display services bound to specific IP addresses and ports
+    - **Color-Coded Connections**: Physical connections colored by cable type, logical connections in blue
+
+### Feature Development
+
+Creating new features is simple with the lifecycle hook system:
+
+```javascript
+class MyFeature {
+    static onMount(context) {
+        // Initialize during system startup
+        return { initialized: true };
+    }
+
+    static onRender(context) {
+        // Add custom rendering logic
+        return { success: true };
+    }
+}
+```
+
+See `LIFECYCLE_DOCUMENTATION.md` for complete feature development guide.
 
 ## 🚀 Technology Stack
 
