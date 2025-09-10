@@ -66,6 +66,9 @@
             canvas.render_connection_arrows = safeGetConfig('canvas.render_connection_arrows', true);
             canvas.highquality_render = safeGetConfig('canvas.highquality_render', true);
             canvas.use_gradients = safeGetConfig('canvas.use_gradients', true);
+            canvas.allow_searchbox = safeGetConfig('canvas.allow_searchbox', false);
+            canvas.render_connection_arrows = safeGetConfig('canvas.render_connection_arrows', false);
+            canvas.render_canvas_border = safeGetConfig('canvas.render_canvas_border', false);
 
             const canvasElement = document.getElementById('mycanvas');
             if (!canvasElement || !canvas) return;

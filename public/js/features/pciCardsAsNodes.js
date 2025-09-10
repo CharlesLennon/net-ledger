@@ -48,6 +48,12 @@ class PciCardsAsNodes {
                 return false;
             }
 
+            connectedToDevice(deviceNode) {
+                const targetDeviceSlotIndex = deviceNode.outputs.findIndex(output => output.type === 'pci_lane');
+                const pciCardSlotIndex = this.inputs.findIndex(input => input.type === 'pci_lane');
+                deviceNode.connect(targetDeviceSlotIndex, this, pciCardSlotIndex);
+            }
+
             onNodeSizeOrPositionChanged() {
                 const event = new CustomEvent("nodeSizeOrPositionChanged", { detail: { node: this } });
                 window.dispatchEvent(event);
@@ -123,10 +129,7 @@ class PciCardsAsNodes {
             var targetDevice = canvas.graph._nodes.find(n => n.serial_number === card.device_serial_number);
             var pciCardNode = canvas.graph._nodes.find(n => n.device_serial_number === card.device_serial_number && n.type === "basic/pci_card");
             if (targetDevice && pciCardNode) {
-                const targetDeviceSlotIndex = targetDevice.outputs.findIndex(output => output.type === 'pci_lane');
-                const pciCardSlotIndex = pciCardNode.inputs.findIndex(input => input.type === 'pci_lane');
-                targetDevice.connect(targetDeviceSlotIndex, pciCardNode, pciCardSlotIndex);
-                canvas.setDirty(true, true);
+                pciCardNode.connectedToDevice(targetDevice);
             }
         });
     }
