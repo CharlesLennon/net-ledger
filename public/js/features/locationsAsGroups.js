@@ -1,23 +1,19 @@
 class LocationsAsGroups {
     static onConfigLoad(config) {
-        config.push({
-            name: 'Locations as Groups',
-            feature: 'locationsAsGroups',
-            version: '1.0.0',
-            description: 'Organize devices by location groups on the canvas',
-            variables: [
-                {
-                    name: 'locationGroupSpacingVertical',
-                    default: 400,
-                    type: 'number'
-                },
-                {
-                    name: 'locationGroupSpacingHorizontal',
-                    default: 1600,
-                    type: 'number'
-                }
-            ]
-        });
+        config.push([
+            {
+                name: 'locationGroupSpacingVertical',
+                value: 400,
+                type: 'number'
+            },
+        ]);
+        config.push([ 
+            {
+                name: 'locationGroupSpacingHorizontal',
+                value: 1600,
+                type: 'number'
+            }
+        ]);
         return config;
     }
 

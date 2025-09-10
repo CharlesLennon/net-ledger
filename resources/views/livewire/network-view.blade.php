@@ -139,20 +139,10 @@
         }
 
         function safeGetConfig(variableName, defaultValue = null) {
-            const parts = variableName.split('.');
-            if (parts.length !== 2) {
-                console.warn(`Invalid variable name format: ${variableName}. Expected format 'featureName.variableName'.`);
-                return defaultValue;
-            }
-            const [featureName, varName] = parts;
-            if (window.CONFIG) {
-                for (const featureConfig of window.CONFIG) {
-                    if (featureConfig.feature === featureName && featureConfig.variables) {
-                        for (const variable of featureConfig.variables) {
-                            if (variable.name === varName) {
-                                return variable.hasOwnProperty('value') ? variable.value : variable.default;
-                            }
-                        }
+            for (const configGroup of window.CONFIG) {
+                for (const variable of configGroup || []) {
+                    if (variable.name === variableName) {
+                        return variable.value !== undefined ? variable.value : defaultValue;
                     }
                 }
             }
