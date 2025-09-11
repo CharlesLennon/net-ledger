@@ -1,4 +1,14 @@
 class LocationsAsGroups {
+    static onInit() {
+        window.addEventListener("groupDeleted", (event) => {
+           //remove from canvas
+           //tell all nodes in group to remove group_id and reposition 
+           //tell livewire to remove from db
+        });
+        
+    }
+
+    
     static onConfigLoad(config) {
         config.push([
             {
@@ -54,6 +64,53 @@ class LocationsAsGroups {
 
     static createGroupRecursively(location, canvas, x, y, spacingVertical, spacingHorizontal) {
         const group = new window.LiteGraph.LGraphGroup();
+        group.getMenuOptions = (options) => {
+            options.push(null,{
+                content: 'Group: ' + group.title,
+                has_submenu: true,
+                submenu: {
+                    options: [
+                        {
+                            content: 'Delete',
+                            callback: () => Livewire.dispatch('on-location-deleted', { location_id: group.id })
+                        },
+                        {
+                            content: 'Dump',
+                            callback: () => console.table(group)
+                        },
+                        {
+                            content: 'Clone',
+                            callback: () => Livewire.dispatch('on-location-cloned', { location_id: group.id })
+                        },
+                        {
+                            content: 'Edit',
+                            has_submenu: true,
+                            submenu: {
+                                options: [
+                                    {
+                                        content: 'Title',
+                                        callback: () => this.prompt(`Enter new value for ${group.title}:`, group.title, (newValue) => {
+                                            Livewire.dispatch('on-location-title-changed', { location_id: group.id, new_title: newValue });
+                                        }, null, false)
+                                    },
+                                    {
+                                        content: 'Parent',
+                                        callback: () => this.prompt(`Enter new parent for ${group.title}:`, group.parent_location_id || '', (newValue) => {
+                                            Livewire.dispatch('on-location-parent-changed', { location_id: group.id, new_parent_id: newValue });
+                                        }, null, false)
+                                    },
+                                    {
+                                        content: 'Switch Direction',
+                                        callback: () => Livewire.dispatch('on-location-direction-inverted', { location_id: group.id })
+                                    },
+                                ]
+                            }
+                        },
+                    ]
+                }
+            });
+            return options;
+        };
         group.collapsed = [];
         group.nodes = [];
         group.title = location.name;

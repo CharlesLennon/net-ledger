@@ -6,6 +6,7 @@
         devicesAsNodes: true,
         servicesAsNodes: true,
         pciCardsAsNodes: true,
+        customMenus: true,
 	};
 
 	const FEATURE_LOADER = {
@@ -66,6 +67,7 @@
             devicesAsNodes: '/js/features/devicesAsNodes.js',
             servicesAsNodes: '/js/features/servicesAsNodes.js',
             pciCardsAsNodes: '/js/features/pciCardsAsNodes.js',
+            customMenus: '/js/features/customMenus.js',
 		};
 
 		Object.entries(mapperFiles).forEach(([featureName, filePath]) => {

@@ -13,13 +13,13 @@ use App\Models\Service;
 use JsonSerializable;
 use Livewire\Attributes\On;
 use Livewire\Component;
+use App\Traits\LocationListeners;
+use App\Traits\DeviceListeners;
 
 class NetworkView extends Component implements JsonSerializable
 {
-    public function mount()
-    {
-        // Component initialization
-    }
+    use locationListeners;
+    use DeviceListeners;
 
     public function updateConnection($connectionId, $cableType)
     {

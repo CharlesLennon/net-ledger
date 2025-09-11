@@ -59,6 +59,51 @@ class DevicesAsNodes {
                 window.dispatchEvent(event);
             }
 
+            getMenuOptions(options) {
+                if (!options) { options = []; }
+                options.push(null,{
+                content: 'Device: ' + this.title,
+                has_submenu: true,
+                submenu: {
+                    options: [
+                        {
+                            content: 'Delete',
+                            callback: () => Livewire.dispatch('on-device-deleted', { device_id: this.id })
+                        },
+                        {
+                            content: 'Dump',
+                            callback: () => console.table(this)
+                        },
+                        {
+                            content: 'Clone',
+                            callback: () => Livewire.dispatch('on-device-cloned', { device_id: this.id })
+                        },
+                        {
+                            content: 'Edit',
+                            has_submenu: true,
+                            submenu: {
+                                options: [
+                                    // {
+                                    //     content: 'Title',
+                                    //     callback: () => window.LGraphCanvas.prototype.prompt(`Enter new value for ${this.title}:`, this.title, (newValue) => {
+                                    //         Livewire.dispatch('on-device-title-changed', { device_id: this.id, new_title: newValue });
+                                    //     }, null, false)
+                                    // },
+                                    // {
+                                    //     content: 'Group',
+                                    //     callback: () => window.LGraphCanvas.prototype.prompt(`Enter new group for ${this.title}:`, this.group_id || '', (newValue) => {
+                                    //         Livewire.dispatch('on-device-group-changed', { device_id: this.id, new_group_id: newValue });
+                                    //     }, null, false)
+                                    // }
+                                ]
+                            }
+                        },
+                    ]
+                }
+            });
+            return options;
+            }
+
 
         }
         LiteGraph.registerNodeType("basic/device", deviceNode);
