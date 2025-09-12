@@ -60,6 +60,60 @@ class ServicesAsNodes {
                     submenu: {
                         options: [
                             {
+                                content: 'Edit',
+                                has_submenu: true,
+                                submenu: {
+                                    options: [
+                                        {
+                                            content: 'Name',
+                                            callback: () => {
+                                                window.Livewire.dispatch('on-service-title-changed', {
+                                                    id: this.service_id,
+                                                    current: this.service_name
+                                                });
+                                            }
+                                        },
+                                        {
+                                            content: 'IP Address',
+                                            callback: () => {
+                                                window.Livewire.dispatch('on-service-ip-changed', {
+                                                    id: this.service_id,
+                                                    current: this.service_ip
+                                                });
+                                            }
+                                        },
+                                        {
+                                            content: 'Port',
+                                            callback: () => {
+                                                window.Livewire.dispatch('on-service-port-changed', {
+                                                    id: this.service_id,
+                                                    current: this.service_port
+                                                });
+                                            }
+                                        },
+                                    ]
+                                }
+                            },
+                            null,
+                            {
+                                content: 'Clone',
+                                callback: () => {
+                                    window.Livewire.dispatch('on-service-cloned', {
+                                        service_id: this.service_id
+                                    });
+                                }
+                            },
+                            {
+                                content: 'Delete',
+                                callback: () => {
+                                    if (confirm('Are you sure you want to delete this service?')) {
+                                        window.Livewire.dispatch('on-service-deleted', {
+                                            service_id: this.service_id
+                                        });
+                                    }
+                                }
+                            },
+                            {
                                 content: 'Dump',
                                 callback: () => console.table(this)
                             },
@@ -99,6 +153,8 @@ class ServicesAsNodes {
                         serviceNode.device_serial_number = service.device_serial_number;
                         serviceNode.service_ip = IP;
                         serviceNode.service_port = svc.port_number;
+                        serviceNode.service_id = svc.service_id;
+                        serviceNode.service_name = svc.name;
                         
                         canvas.graph.add(serviceNode);
                         serviceNode.moveToGroup();

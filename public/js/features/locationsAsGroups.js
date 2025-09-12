@@ -71,18 +71,6 @@ class LocationsAsGroups {
                 submenu: {
                     options: [
                         {
-                            content: 'Delete',
-                            callback: () => Livewire.dispatch('on-location-deleted', { location_id: group.id })
-                        },
-                        {
-                            content: 'Dump',
-                            callback: () => console.table(group)
-                        },
-                        {
-                            content: 'Clone',
-                            callback: () => Livewire.dispatch('on-location-cloned', { location_id: group.id })
-                        },
-                        {
                             content: 'Edit',
                             has_submenu: true,
                             submenu: {
@@ -102,6 +90,20 @@ class LocationsAsGroups {
                                 ]
                             }
                         },
+                        null,
+                        {
+                            content: 'Clone',
+                            callback: () => Livewire.dispatch('on-location-cloned', { location_id: group.id })
+                        },
+                        {
+                            content: 'Delete',
+                            callback: () => Livewire.dispatch('on-location-deleted', { location_id: group.id })
+                        },
+                        {
+                            content: 'Dump',
+                            callback: () => console.table(group)
+                        },
+                        
                     ]
                 }
             });

@@ -67,6 +67,57 @@ class PciCardsAsNodes {
                     submenu: {
                         options: [
                             {
+                                content: 'Edit',
+                                has_submenu: true,
+                                submenu: {
+                                    options: [
+                                        {
+                                            content: 'Name',
+                                            callback: () => {
+                                                window.Livewire.dispatch('on-pci-card-title-changed', { id: this.card_serial_number, current: this.model_name });
+                                            }
+                                        },
+                                        {
+                                            content: 'Type',
+                                            callback: () => {
+                                                window.Livewire.dispatch('on-pci-card-type-changed', {
+                                                    id: this.card_serial_number,
+                                                    current: this.pci_type
+                                                });
+                                            }
+                                        },
+                                        {
+                                            content: 'Serial Number',
+                                            callback: () => {
+                                                window.Livewire.dispatch('on-pci-card-serial-changed', {
+                                                    id: this.card_serial_number,
+                                                    current: this.card_serial_number
+                                                });
+                                            }
+                                        },
+                                    ]
+                                }
+                            },
+                            null,
+                            {
+                                content: 'Clone',
+                                callback: () => {
+                                    window.Livewire.dispatch('on-pci-card-cloned', {
+                                        pci_card_id: this.card_serial_number
+                                    });
+                                }
+                            },
+                            {
+                                content: 'Delete',
+                                callback: () => {
+                                    if (confirm('Are you sure you want to delete this PCI card?')) {
+                                        window.Livewire.dispatch('on-pci-card-deleted', {
+                                            pci_card_id: this.card_serial_number
+                                        });
+                                    }
+                                }
+                            },
+                            {
                                 content: 'Dump',
                                 callback: () => console.table(this)
                             },
@@ -101,6 +152,8 @@ class PciCardsAsNodes {
             pciNode.group_id = group_id;
             pciNode.device_serial_number = card.device_serial_number;
             pciNode.pci_type = card.type;
+            pciNode.card_serial_number = card.card_serial_number;
+            pciNode.model_name = card.model_name;
             pciNode.moveToGroup();
             canvas.graph.add(pciNode.render());
 

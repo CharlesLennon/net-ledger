@@ -67,18 +67,6 @@ class DevicesAsNodes {
                 submenu: {
                     options: [
                         {
-                            content: 'Delete',
-                            callback: () => Livewire.dispatch('on-device-deleted', { device_id: this.id })
-                        },
-                        {
-                            content: 'Dump',
-                            callback: () => console.table(this)
-                        },
-                        {
-                            content: 'Clone',
-                            callback: () => Livewire.dispatch('on-device-cloned', { device_id: this.id })
-                        },
-                        {
                             content: 'Edit',
                             has_submenu: true,
                             submenu: {
@@ -94,6 +82,19 @@ class DevicesAsNodes {
                                     }
                                 ]
                             }
+                        },
+                        null,
+                        {
+                            content: 'Clone',
+                            callback: () => Livewire.dispatch('on-device-cloned', { device_id: this.id })
+                        },
+                        {
+                            content: 'Delete',
+                            callback: () => Livewire.dispatch('on-device-deleted', { device_id: this.id })
+                        },
+                        {
+                            content: 'Dump',
+                            callback: () => console.table(this)
                         },
                     ]
                 }
