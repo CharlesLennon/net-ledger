@@ -2,31 +2,11 @@ class CustomMenus {
     static onInit() {
 
         class CustomLGraphCanvas extends window.LGraphCanvas {
-            // Custom functionality can be added here
-            // getMenuOptions
             getDefaultMenuOptions(options) {
                 if (!options) { options = []; }
                 options.push({
-                    content: 'example menu item',
-                    has_submenu: true,
-                    submenu: { 
-                        options: [
-                            { 
-                                content: 'subitem 1',
-                                callback: () => alert('subitem 1') 
-                            },
-                            { 
-                                content: 'subitem 2',
-                                has_submenu: true,
-                                submenu: {
-                                    options: [
-                                        { content: 'subitem 2.1', callback: () => alert('subitem 2.1') },
-                                        { content: 'subitem 2.2', callback: () => alert('subitem 2.2') },
-                                    ]
-                                }
-                            },
-                        ]
-                    },
+                    content: 'Dump',
+                    callback: () => console.info(this)
                 });
                 return options;
             }
@@ -79,11 +59,23 @@ class CustomMenus {
                 if (!options) { options = []; }
                 if(!slot){ slot = this.safeGetSlotAt(node, x, y); }
                 if (slot) {
-                    options.push(null); //separator
-                    options.push({
-                        content: 'example slot item',
-                        callback: () => console.log(slot)
-                    });
+                    if (slot.getMenuOptions) {
+                        options = slot.getMenuOptions(options);
+                    }else{
+                        var slotName = slot.input ? slot.input.name : slot.output.name;
+                        options.push(null,{
+                            content: 'Slot: ' + slotName,
+                            has_submenu: true,
+                            submenu: {
+                                options: [
+                                    {
+                                        content: 'Dump',
+                                        callback: () => console.table(slot)
+                                    },
+                                ]
+                            }
+                        });
+                    }
                 }
                 return options;
             }
@@ -119,8 +111,6 @@ class CustomMenus {
                 }
                 return options;
             }
-
-            
 
             processContextMenu(node, event) {
                 let options = [];

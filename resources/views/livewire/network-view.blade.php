@@ -25,6 +25,9 @@
         <canvas id="mycanvas" class="w-full h-full block" style="border: 1px solid black;"></canvas>
     </div>
 
+    <!-- Edit Panel Component -->
+    <livewire:edit-panel />
+
     <script>
         function refreshDatabase() {
             fetch('/refresh-db', { 

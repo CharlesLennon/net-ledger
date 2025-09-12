@@ -51,6 +51,23 @@ class ServicesAsNodes {
                 const event = new CustomEvent("nodeSizeOrPositionChanged", { detail: { node: this } });
                 window.dispatchEvent(event);
             }
+
+            getMenuOptions(options) {
+                if (!options) { options = []; }
+                options.push(null,{
+                    content: 'Service: ' + this.title,
+                    has_submenu: true,
+                    submenu: {
+                        options: [
+                            {
+                                content: 'Dump',
+                                callback: () => console.table(this)
+                            },
+                        ]
+                    }
+                });
+                return options;
+            }
         }
         LiteGraph.registerNodeType("basic/service", serviceNode);
     }

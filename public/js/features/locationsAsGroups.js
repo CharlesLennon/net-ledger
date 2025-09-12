@@ -89,15 +89,11 @@ class LocationsAsGroups {
                                 options: [
                                     {
                                         content: 'Title',
-                                        callback: () => this.prompt(`Enter new value for ${group.title}:`, group.title, (newValue) => {
-                                            Livewire.dispatch('on-location-title-changed', { location_id: group.id, new_title: newValue });
-                                        }, null, false)
+                                        callback: () => Livewire.dispatch('on-location-title-changed', { id: group.id, current: group.title, new: null })
                                     },
                                     {
                                         content: 'Parent',
-                                        callback: () => this.prompt(`Enter new parent for ${group.title}:`, group.parent_location_id || '', (newValue) => {
-                                            Livewire.dispatch('on-location-parent-changed', { location_id: group.id, new_parent_id: newValue });
-                                        }, null, false)
+                                        callback: () => Livewire.dispatch('on-location-parent-changed', { id: group.id, current: group.parent_location_id, new: null })
                                     },
                                     {
                                         content: 'Switch Direction',

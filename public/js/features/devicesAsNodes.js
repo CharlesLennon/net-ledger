@@ -83,18 +83,15 @@ class DevicesAsNodes {
                             has_submenu: true,
                             submenu: {
                                 options: [
-                                    // {
-                                    //     content: 'Title',
-                                    //     callback: () => window.LGraphCanvas.prototype.prompt(`Enter new value for ${this.title}:`, this.title, (newValue) => {
-                                    //         Livewire.dispatch('on-device-title-changed', { device_id: this.id, new_title: newValue });
-                                    //     }, null, false)
-                                    // },
-                                    // {
-                                    //     content: 'Group',
-                                    //     callback: () => window.LGraphCanvas.prototype.prompt(`Enter new group for ${this.title}:`, this.group_id || '', (newValue) => {
-                                    //         Livewire.dispatch('on-device-group-changed', { device_id: this.id, new_group_id: newValue });
-                                    //     }, null, false)
-                                    // }
+                                    {
+                                        content: 'Title',
+                                        callback: () => Livewire.dispatch('on-device-title-changed', { id: this.id, current: this.title, new: null })
+                                    },
+                                    {
+                                        //consider moveing this to locationsAsGroups.js so this dose not know about locations being groups (this.group_id)
+                                        content: 'Location',
+                                        callback: () => Livewire.dispatch('on-device-location-changed', { id: this.id, current: this.group_id, new: null })
+                                    }
                                 ]
                             }
                         },

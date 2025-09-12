@@ -37,32 +37,40 @@ trait DeviceListeners
     }
 
     #[On('on-device-title-changed')]
-    public function ondeviceTitleChanged(int $device_id, string $new_title): void
+    public function ondeviceTitleChanged(int $id, $current = null, $new = null): void
     {
-        $device = Device::find($device_id);
-        if (!$device) {
-            return;
+        if($new) {
+            $device = Device::find($id);
+            if (!$device) {
+                return;
+            }
+    
+            $device->name = $new;
+            $device->save();
+    
+            // Reload the page to reflect changes
+            $this->redirect(request()->header('Referer'));
+        }else{            
+            $this->dispatch('show-edit-panel', 'Device Name', $current, 'on-device-title-changed');
         }
-
-        $device->name = $new_title;
-        $device->save();
-
-        // Reload the page to reflect changes
-        $this->redirect(request()->header('Referer'));
     }
 
-    #[On('on-device-parent-changed')]
-    public function ondeviceParentChanged(int $device_id, ?int $new_parent_id): void
+    #[On('on-device-location-changed')]
+    public function ondeviceLocationChanged(int $id, $current = null, $new = null): void
     {
-        $device = Device::find($device_id);
-        if (!$device) {
-            return;
+        if($new) {
+            $device = Device::find($id);
+            if (!$device) {
+                return;
+            }
+    
+            $device->location_id = $new;
+            $device->save();
+    
+            // Reload the page to reflect changes
+            $this->redirect(request()->header('Referer'));
+        }else{            
+            $this->dispatch('show-edit-panel', 'Device Location ID', $current, 'on-device-location-changed');
         }
-
-        $device->parent_device_id = $new_parent_id;
-        $device->save();
-
-        // Reload the page to reflect changes
-        $this->redirect(request()->header('Referer'));
     }
 }

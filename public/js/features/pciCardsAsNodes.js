@@ -58,6 +58,23 @@ class PciCardsAsNodes {
                 const event = new CustomEvent("nodeSizeOrPositionChanged", { detail: { node: this } });
                 window.dispatchEvent(event);
             }
+
+            getMenuOptions(options) {
+                if (!options) { options = []; }
+                options.push(null,{
+                    content: 'PCI Card: ' + this.title,
+                    has_submenu: true,
+                    submenu: {
+                        options: [
+                            {
+                                content: 'Dump',
+                                callback: () => console.table(this)
+                            },
+                        ]
+                    }
+                });
+                return options;
+            }
         }
         LiteGraph.registerNodeType("basic/pci_card", pciCardNode);
     }

@@ -68,32 +68,40 @@ trait LocationListeners
     }
 
     #[On('on-location-title-changed')]
-    public function onLocationTitleChanged(int $location_id, string $new_title): void
+    public function onLocationTitleChanged(int $id, $current = null, $new = null): void
     {
-        $location = Location::find($location_id);
-        if (!$location) {
-            return;
+        if ($new) {
+            $location = Location::find($id);
+            if (!$location) {
+                return;
+            }
+
+                $location->name = $new;
+            $location->save();
+
+            // Reload the page to reflect changes
+            $this->redirect(request()->header('Referer'));
+        } else {
+            $this->dispatch('show-edit-panel', 'Location Name', $current, 'on-location-title-changed');
         }
-
-        $location->name = $new_title;
-        $location->save();
-
-        // Reload the page to reflect changes
-        $this->redirect(request()->header('Referer'));
     }
 
     #[On('on-location-parent-changed')]
-    public function onLocationParentChanged(int $location_id, ?int $new_parent_id): void
+    public function onLocationParentChanged(int $id, $current = null, $new = null): void
     {
-        $location = Location::find($location_id);
-        if (!$location) {
-            return;
+        if ($new) {
+            $location = Location::find($id);
+            if (!$location) {
+                return;
+            }
+
+            $location->parent_location_id = $new;
+            $location->save();
+
+            // Reload the page to reflect changes
+            $this->redirect(request()->header('Referer'));
+        } else {
+            $this->dispatch('show-edit-panel', 'Location Parent ID', $current, 'on-location-parent-changed');
         }
-
-        $location->parent_location_id = $new_parent_id;
-        $location->save();
-
-        // Reload the page to reflect changes
-        $this->redirect(request()->header('Referer'));
     }
 }
