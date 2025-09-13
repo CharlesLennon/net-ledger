@@ -7,19 +7,21 @@ use App\Models\Device;
 use App\Models\DeviceInterface;
 use App\Models\IPAddress;
 use App\Models\Location;
-use App\Models\NetworkView as NetworkViewModel;
-use App\Models\NodePosition;
 use App\Models\Service;
+use App\Traits\DeviceListeners;
+use App\Traits\LocationListeners;
+use App\Traits\PciCardListeners;
+use App\Traits\ServiceListeners;
 use JsonSerializable;
 use Livewire\Attributes\On;
 use Livewire\Component;
-use App\Traits\LocationListeners;
-use App\Traits\DeviceListeners;
 
 class NetworkView extends Component implements JsonSerializable
 {
-    use locationListeners;
     use DeviceListeners;
+    use locationListeners;
+    use PciCardListeners;
+    use ServiceListeners;
 
     public function updateConnection($connectionId, $cableType)
     {
