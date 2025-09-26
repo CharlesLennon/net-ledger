@@ -1,5 +1,6 @@
 <?php
 
+use App\Livewire\NetworkScanManager;
 use App\Livewire\NetworkView;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
@@ -7,6 +8,8 @@ use Illuminate\Support\Facades\Route;
 Route::get('/sanity-check', function () {
     return view('sanity-check');
 });
+
+Route::get('/network-scanner', NetworkScanManager::class)->name('network.scanner');
 
 Route::post('/refresh-db', function () {
     try {
