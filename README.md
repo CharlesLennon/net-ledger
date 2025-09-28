@@ -2,7 +2,7 @@
 
 A comprehensive network inventory and asset management system, serving as a single source of truth for all network devices, services, and connections.
 ![alt text](image-1.png)
-
+![alt text](image.png)
 ## ✨ Features
 
 *   **Precise Asset Tracking**: Meticulously track and manage all network devices, cards, and interfaces
