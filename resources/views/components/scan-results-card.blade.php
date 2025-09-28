@@ -44,7 +44,8 @@
                     <div class="flex flex-wrap gap-2">
                         <button wire:click="scanAllHostsCommon"
                                 @if($portScanning) disabled @endif
-                                class="px-4 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white rounded-lg text-sm font-medium transition-colors duration-200 {{ $portScanning ? 'cursor-not-allowed' : '' }}">
+                                @if($portScanning) title="Please wait for scan to finish" @endif
+                                class="px-4 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:text-gray-500 text-white rounded-lg text-sm font-medium transition-colors duration-200 {{ $portScanning ? 'cursor-not-allowed opacity-60' : '' }}">
                             @if($portScanning)
                                 <span class="flex items-center">
                                     <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -59,12 +60,14 @@
                         </button>
                         <button wire:click="scanAllHostsExtended"
                                 @if($portScanning) disabled @endif
-                                class="px-4 py-2 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-400 text-white rounded-lg text-sm font-medium transition-colors duration-200 {{ $portScanning ? 'cursor-not-allowed' : '' }}">
+                                @if($portScanning) title="Please wait for scan to finish" @endif
+                                class="px-4 py-2 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-300 disabled:text-gray-500 text-white rounded-lg text-sm font-medium transition-colors duration-200 {{ $portScanning ? 'cursor-not-allowed opacity-60' : '' }}">
                             Extended Ports
                         </button>
                         <button wire:click="scanAllHostsCustom"
                                 @if($portScanning) disabled @endif
-                                class="px-4 py-2 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400 text-white rounded-lg text-sm font-medium transition-colors duration-200 {{ $portScanning ? 'cursor-not-allowed' : '' }}">
+                                @if($portScanning) title="Please wait for scan to finish" @endif
+                                class="px-4 py-2 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 disabled:text-gray-500 text-white rounded-lg text-sm font-medium transition-colors duration-200 {{ $portScanning ? 'cursor-not-allowed opacity-60' : '' }}">
                             Custom Scan
                         </button>
                     </div>
@@ -183,32 +186,20 @@
                                             </div>
                                         @endif
 
-                                        <!-- Port Scanning Buttons (Only for responsive hosts) -->
+                                        <!-- Port Scanning Buttons (Only for responsive hosts, only after scan is done) -->
+                                        @if(!$scanning)
                                         <div class="flex flex-wrap gap-2 pt-3 border-t border-gray-200 dark:border-gray-600">
                                             <span class="text-xs text-gray-600 dark:text-gray-400 font-medium self-center mr-2">Port Scan:</span>
                                             <button wire:click="scanSingleHostCommon({{ $index }})"
-                                                    @if($portScanning) disabled @endif
-                                                    class="px-3 py-1 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white rounded text-xs font-medium transition-colors duration-200 {{ $portScanning ? 'cursor-not-allowed' : '' }}">
-                                                @if($portScanning)
-                                                    <span class="flex items-center">
-                                                        <svg class="animate-spin -ml-1 mr-1 h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 718-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                                        </svg>
-                                                        ...
-                                                    </span>
-                                                @else
-                                                    Common
-                                                @endif
+                                                    class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded text-xs font-medium transition-colors duration-200">
+                                                Common
                                             </button>
                                             <button wire:click="scanSingleHostExtended({{ $index }})"
-                                                    @if($portScanning) disabled @endif
-                                                    class="px-3 py-1 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-400 text-white rounded text-xs font-medium transition-colors duration-200 {{ $portScanning ? 'cursor-not-allowed' : '' }}">
+                                                    class="px-3 py-1 bg-purple-500 hover:bg-purple-600 text-white rounded text-xs font-medium transition-colors duration-200">
                                                 Extended
                                             </button>
                                             <button wire:click="scanSingleHostCustom({{ $index }})"
-                                                    @if($portScanning) disabled @endif
-                                                    class="px-3 py-1 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400 text-white rounded text-xs font-medium transition-colors duration-200 {{ $portScanning ? 'cursor-not-allowed' : '' }}">
+                                                    class="px-3 py-1 bg-orange-500 hover:bg-orange-600 text-white rounded text-xs font-medium transition-colors duration-200">
                                                 Custom
                                             </button>
 
@@ -218,6 +209,7 @@
                                                 </span>
                                             @endif
                                         </div>
+                                        @endif
                                     @endif
                                 </div>
                             </div>
@@ -250,7 +242,7 @@
             @endif
 
             <!-- Port Scan Controls -->
-            @if(!empty($scanResults))
+            @if(!empty($scanResults) && !$scanning)
                 <div class="mt-6 p-6 bg-gray-50 dark:bg-gray-700 rounded-xl">
                 <div class="mb-4">
                     <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Port Scanning Options</h3>
@@ -260,15 +252,15 @@
                     <div class="mb-4">
                         <div class="flex flex-wrap gap-3 mb-3">
                             <label class="flex items-center">
-                                <input type="radio" wire:model="customPorts" value="common" class="mr-2">
+                                <input type="radio" wire:model="customPorts" value="common" class="mr-2" @if($portScanning) disabled @endif @if($portScanning) title="Please wait for scan to finish" @endif>
                                 <span class="text-sm text-gray-700 dark:text-gray-300">Common ports ({{ count($that->getPortsByType('common')) }})</span>
                             </label>
                             <label class="flex items-center">
-                                <input type="radio" wire:model="customPorts" value="extended" class="mr-2">
+                                <input type="radio" wire:model="customPorts" value="extended" class="mr-2" @if($portScanning) disabled @endif @if($portScanning) title="Please wait for scan to finish" @endif>
                                 <span class="text-sm text-gray-700 dark:text-gray-300">Extended scan ({{ count($that->getPortsByType('extended')) }} ports)</span>
                             </label>
                             <label class="flex items-center">
-                                <input type="radio" wire:model="customPorts" value="custom" class="mr-2">
+                                <input type="radio" wire:model="customPorts" value="custom" class="mr-2" @if($portScanning) disabled @endif @if($portScanning) title="Please wait for scan to finish" @endif>
                                 <span class="text-sm text-gray-700 dark:text-gray-300">Custom ports</span>
                             </label>
                         </div>
@@ -278,7 +270,8 @@
                             <input type="text"
                                 wire:model.defer="customPortInput"
                                 placeholder="Enter ports: 22,80,443,8080 or ranges: 80-90,443,8000-8080\n• Mixed: 22,80,443,8000-8010"
-                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:text-white text-sm">
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:text-white text-sm"
+                                @if($portScanning) disabled @endif @if($portScanning) title="Please wait for scan to finish" @endif>
                         </div>
                         @endif
                     </div>
@@ -289,11 +282,13 @@
                             <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Select hosts to scan:</span>
                             <div class="flex space-x-2">
                                 <button wire:click="selectAllForPortScan"
-                                        class="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200 px-2 py-1 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20">
+                                        class="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200 px-2 py-1 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                                        @if($portScanning) disabled @endif @if($portScanning) title="Please wait for scan to finish" @endif>
                                     Select All
                                 </button>
                                 <button wire:click="clearPortScanSelection"
-                                        class="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200 px-2 py-1 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20">
+                                        class="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200 px-2 py-1 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                                        @if($portScanning) disabled @endif @if($portScanning) title="Please wait for scan to finish" @endif>
                                     Clear
                                 </button>
                             </div>
@@ -305,7 +300,8 @@
                                     <input type="checkbox"
                                         wire:click="togglePortScanHost({{ $index }})"
                                         @if(in_array($index, $selectedHostsForPortScan)) checked @endif
-                                        class="mr-2 w-4 h-4 rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+                                        class="mr-2 w-4 h-4 rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                                        @if($portScanning) disabled @endif @if($portScanning) title="Please wait for scan to finish" @endif>
                                     <span class="text-xs font-mono text-gray-700 dark:text-gray-300">{{ $host['ip'] }}</span>
                                 </label>
                             @endforeach
@@ -315,7 +311,8 @@
                         <div class="flex justify-center">
                             <button wire:click="startPortScan"
                                     @if($portScanning) disabled @endif
-                                    class="px-6 py-3 bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white rounded-lg font-medium transition-colors duration-200 {{ $portScanning ? 'cursor-not-allowed' : '' }}">
+                                    @if($portScanning) title="Please wait for scan to finish" @endif
+                                    class="px-6 py-3 bg-green-500 hover:bg-green-600 disabled:bg-gray-300 disabled:text-gray-500 text-white rounded-lg font-medium transition-colors duration-200 {{ $portScanning ? 'cursor-not-allowed opacity-60' : '' }}">
                                 @if($portScanning)
                                     <span class="flex items-center">
                                         <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -421,23 +418,24 @@
                             </div>
                         @endforeach
 
-                        <!-- Individual Host Port Scan Buttons -->
+                        <!-- Individual Host Port Scan Buttons (only after scan is done) -->
+                        @if(!$scanning)
                         <div class="mt-6 pt-4 border-t border-gray-200 dark:border-gray-600">
                             <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Quick Port Scan</h4>
                             <div class="flex flex-wrap gap-2">
                                 @foreach($scanResults as $index => $host)
                                     <button wire:click="scanSingleHostPorts({{ $index }})"
-                                            @if($portScanning) disabled @endif
-                                            class="px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 text-gray-700 rounded-lg font-medium transition-colors duration-200">
+                                            class="px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors duration-200">
                                         {{ $host['ip'] }}
                                     </button>
                                 @endforeach
                             </div>
                         </div>
+                        @endif
                     </div>
                     @endif
                 </div>
-                @endif
+            @endif
             </div>
     </x-card>
 @endif

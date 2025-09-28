@@ -71,7 +71,15 @@
         </x-scan-configurator-card>
 
         <x-scan-progress-card :progressText="$progressText" :currentProgress="$currentProgress" :scanning="$scanning" />
+        <x-import-scan-card />
         <x-scan-results-card :scanResults="$scanResults" :that="$this" :showCommitOptions="$showCommitOptions" :portScanning="$portScanning" :selectedHosts="$selectedHosts" :showUnresponsiveIPs="$showUnresponsiveIPs" :customPorts="$customPorts" :customPortInput="$customPortInput" :scanning="$scanning" :selectedHostsForPortScan="$selectedHostsForPortScan" :portScanProgress="$portScanProgress" :portScanResults="$portScanResults" />
+        @if(!$scanning && !empty($scanResults))
+            <div class="flex justify-center mt-4">
+                <button wire:click="exportScanResults" class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors duration-200">
+                    Export Results as JSON
+                </button>
+            </div>
+        @endif
         <x-port-scanning-card :scanResults="$scanResults" :showCommitOptions="$showCommitOptions" :portScanning="$portScanning" :selectedHostsForPortScan="$selectedHostsForPortScan" :portScanProgress="$portScanProgress" :portScanResults="$portScanResults" />
         <x-scan-history-card :scanHistory="$scanHistory" />
     </div>
@@ -187,6 +195,22 @@
                         scanPollInterval = null;
                     }
                 }, 1000);
+            });
+
+            Livewire.on('download-json', function( event) {
+                const json = event[0].json;
+                const filename = event[0].filename || 'scan-results.json';
+
+                const blob = new Blob([json], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
             });
         });
     </script>
